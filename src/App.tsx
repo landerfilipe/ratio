@@ -27,8 +27,6 @@ import {
   setDoc,
   getDoc,
   enableIndexedDbPersistence,
-  query,
-  orderBy,
 } from 'firebase/firestore';
 import {
   Clock,
@@ -181,11 +179,14 @@ const FIXED_SUBJECTS = [
   'Português',
   'Produtividade',
   'Programação',
+  'Provas e Simulados', // Novo
   'Psicologia',
+  'Qconcursos', // Novo
   'Química',
   'Redação',
   'Russo',
   'Sociologia',
+  'TECconcursos', // Novo
   'Teologia',
   'Vendas e Negociação',
   'Xadrez',
@@ -209,8 +210,6 @@ const db = getFirestore(app);
 const appId = 'ratio-5bfb8';
 
 // --- Ativar Persistência Offline (Cache Inteligente) ---
-// Isso faz o app baixar tudo na primeira vez e depois só as diferenças.
-// Funciona como um "localStorage" supervitaminado para banco de dados.
 try {
   enableIndexedDbPersistence(db).catch((err) => {
     if (err.code == 'failed-precondition') {
@@ -429,21 +428,19 @@ export default function App() {
   }, [wrapperRef]);
 
   // Lock Body Scroll (Overscroll) - Mobile Native Feel
+  // CORREÇÃO: Força o background do body para esconder a linha branca
   useEffect(() => {
-    const preventDefault = (e: TouchEvent) => {
-      // Apenas previne se não estivermos em um container com scroll
-      // Mas como queremos comportamento nativo global, bloquear o body é o principal
-      // O CSS 'overscroll-behavior-y: none' já ajuda muito
-    };
-    // Adicionar CSS programaticamente para garantir
     document.body.style.overscrollBehaviorY = 'none';
     document.documentElement.style.overscrollBehaviorY = 'none';
+    // Define o fundo do body para preto/escuro para evitar o "flash" branco
+    document.body.style.backgroundColor = isDarkMode ? '#0a0a0a' : '#f8fafc';
 
     return () => {
       document.body.style.overscrollBehaviorY = 'auto';
       document.documentElement.style.overscrollBehaviorY = 'auto';
+      document.body.style.backgroundColor = '';
     };
-  }, []);
+  }, [isDarkMode]);
 
   // Timer Interval Logic
   useEffect(() => {
@@ -471,32 +468,33 @@ export default function App() {
 
   // AUTENTICAÇÃO: Google + Anônimo (Fallback) + Persistência
   useEffect(() => {
-    // Garante que a persistência é Local (sobrevive ao fechar o navegador)
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
-        const unsubscribe = onAuthStateChanged(auth, (u) => {
-          if (u) {
-            setUser(u);
-            setLoading(false);
-            setAuthError(null);
-          } else {
-            setUser(null);
-            // Tenta login anônimo silenciosamente
-            signInAnonymously(auth).catch((error) => {
-              console.warn('Login anônimo:', error.code);
-              setLoading(false);
-              // Não mostramos erro aqui para não assustar o usuário que vai logar com Google
-              // O erro só aparece se ele tentar logar e falhar
-            });
-            setLoading(false);
-          }
-        });
-        return () => unsubscribe();
-      })
-      .catch((error) => {
-        console.error('Erro na persistência de auth:', error);
+    // Garante que a persistência é Local
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        setUser(u);
         setLoading(false);
-      });
+        setAuthError(null);
+      } else {
+        setUser(null);
+        // Tenta login anônimo silenciosamente
+        signInAnonymously(auth)
+          .then(() => {
+            // Sucesso, o onAuthStateChanged vai disparar novamente com o usuário
+          })
+          .catch((error) => {
+            console.warn('Login anônimo:', error.code);
+            // Só paramos o loading SE o login anônimo falhar.
+            // Se o login anônimo for bem sucedido, o loading é tratado no 'if (u)'
+            setLoading(false);
+            if (error.code === 'auth/admin-restricted-operation') {
+              setAuthError("Erro: Ative 'Anônimo' no Console.");
+            }
+          });
+        // NOTA: Não chamamos setLoading(false) aqui fora para evitar o flash
+        // Esperamos ou o user (Google/Anônimo) ou o erro do anônimo.
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   // CARREGAMENTO DE DADOS (Firestore com Cache Offline)
@@ -532,10 +530,6 @@ export default function App() {
         // Ordenação local rápida
         loaded.sort((a, b) => b.timestamp - a.timestamp);
         setSessions(loaded);
-
-        // Checa se os dados vieram do cache ou do servidor (para debug se necessário)
-        // const source = snapshot.metadata.fromCache ? "local cache" : "server";
-        // console.log("Data fetched from " + source);
       },
       (error) => {
         console.error('Error fetching study sessions:', error);
@@ -1496,6 +1490,19 @@ export default function App() {
   const dailyGoal = profile.dailyGoalMinutes || 180;
   const selectedDayPercentage =
     dailyGoal > 0 ? Math.round((selectedDayTotal / dailyGoal) * 100) : 0;
+
+  if (loading) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center p-4 ${THEME.bg}`}
+      >
+        <div className='w-full max-w-md space-y-4'>
+          <SkeletonCard isDarkMode={isDarkMode} />
+          <SkeletonCard isDarkMode={isDarkMode} />
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
