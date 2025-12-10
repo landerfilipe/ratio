@@ -29,7 +29,7 @@ import {
   ChartColumn,
   History,
   CheckCircle2,
-  Calendar as CalendarIcon, // Voltando para CalendarIcon como pedido
+  Calendar as CalendarIcon,
   PieChart as PieChartIcon,
   Clipboard,
   ArrowDown,
@@ -276,27 +276,6 @@ const formatTimeComponents = (seconds: number) => {
   return { main: mStr, super: sStr };
 };
 
-const SkeletonCard = ({ isDarkMode }: { isDarkMode: boolean }) => (
-  <div
-    className={`p-6 rounded-2xl border shadow-sm animate-pulse ${
-      isDarkMode
-        ? 'bg-neutral-900 border-neutral-800'
-        : 'bg-white border-slate-200'
-    }`}
-  >
-    <div
-      className={`h-4 w-24 mb-4 rounded ${
-        isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-      }`}
-    ></div>
-    <div
-      className={`h-8 w-16 rounded ${
-        isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-      }`}
-    ></div>
-  </div>
-);
-
 const triggerHaptic = () => {
   if (typeof navigator !== 'undefined' && navigator.vibrate)
     navigator.vibrate(10);
@@ -450,7 +429,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [timerIsActive, timerSeconds, timerMode]);
 
-  // CORREÇÃO: Lógica de Autenticação Restaurada
+  // CORREÇÃO: Lógica de Autenticação Restaurada (Anônimo como fallback)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
@@ -458,21 +437,17 @@ export default function App() {
         setLoading(false);
         setAuthError(null);
       } else {
-        // Se não houver usuário, tenta login anônimo
+        setUser(null);
+        // Tenta login anônimo silenciosamente
         signInAnonymously(auth).catch((error) => {
-          console.error('Erro no login anônimo:', error);
+          console.warn(
+            'Login anônimo não permitido ou falhou (Isso é esperado se desativado no console):',
+            error
+          );
+          // Não definimos erro fatal aqui para permitir que o usuário veja a tela de login Google
           setLoading(false);
-          if (error.code === 'auth/admin-restricted-operation') {
-            // Erro específico quando o provedor "Anonymous" está desativado no console
-            setAuthError(
-              "Erro: Ative a autenticação 'Anônima' no Console do Firebase (Authentication > Sign-in method)."
-            );
-          } else if (error.code === 'auth/operation-not-allowed') {
-            setAuthError('Erro: O método de login não está habilitado.');
-          } else {
-            setAuthError(`Erro ao conectar: ${error.message}`);
-          }
         });
+        setLoading(false);
       }
     });
     return () => unsubscribe();
@@ -745,6 +720,17 @@ export default function App() {
       console.error(error);
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile({ ...profile, photoUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -1449,19 +1435,6 @@ export default function App() {
   const selectedDayPercentage =
     dailyGoal > 0 ? Math.round((selectedDayTotal / dailyGoal) * 100) : 0;
 
-  if (loading) {
-    return (
-      <div
-        className={`min-h-screen flex items-center justify-center p-4 ${THEME.bg}`}
-      >
-        <div className='w-full max-w-md space-y-4'>
-          <SkeletonCard isDarkMode={isDarkMode} />
-          <SkeletonCard isDarkMode={isDarkMode} />
-        </div>
-      </div>
-    );
-  }
-
   if (!user) {
     return (
       <div
@@ -1550,7 +1523,16 @@ export default function App() {
       className={`min-h-screen ${THEME.bg} ${THEME.text} font-sans pb-24 antialiased selection:bg-[#EAB308] selection:text-black transition-colors duration-200 ease-in-out`}
       style={{ fontFamily: "'Urbanist', sans-serif" }}
     >
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap');
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
 
       {/* SVG Definição do Degradê para Ícones - Uniformizado com os botões (Amarelo Claro -> Ouro) */}
       <svg width='0' height='0' className='absolute block'>
@@ -2579,10 +2561,11 @@ export default function App() {
             </div>
 
             {/* DAILY RHYTHM */}
+            {/* Layout adjusted for desktop: Added md:pr-24 to the header container to avoid overlap with absolute percentage */}
             <div
               className={`${THEME.card} p-6 rounded-2xl border shadow-sm relative`}
             >
-              <div className='flex justify-between items-center mb-4 flex-wrap gap-2 pr-0 sm:pr-8'>
+              <div className='flex justify-between items-center mb-4 flex-wrap gap-2 pr-0 sm:pr-8 md:pr-24'>
                 <div className='flex items-center gap-2'>
                   <h3
                     className={`font-bold ${THEME.text} flex items-center gap-2`}
@@ -2704,10 +2687,11 @@ export default function App() {
             </div>
 
             {/* LINE CHART */}
+            {/* Layout adjusted for desktop: Added md:pr-24 to the header container */}
             <div
               className={`${THEME.card} p-6 rounded-2xl border shadow-sm relative`}
             >
-              <div className='flex justify-between items-center mb-6 flex-wrap gap-2 pr-0 sm:pr-8'>
+              <div className='flex justify-between items-center mb-6 flex-wrap gap-2 pr-0 sm:pr-8 md:pr-24'>
                 <div className='flex items-center gap-2'>
                   <h3
                     className={`font-bold ${THEME.text} flex items-center gap-2`}
@@ -3530,20 +3514,17 @@ export default function App() {
                   <label
                     className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-1`}
                   >
-                    Foto de Perfil (URL)
+                    Foto de Perfil
                   </label>
                   <div className='relative'>
                     <input
-                      type='url'
-                      placeholder='https://...'
-                      value={profile.photoUrl}
-                      onChange={(e) =>
-                        setProfile({ ...profile, photoUrl: e.target.value })
-                      }
-                      className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                      type='file'
+                      accept='image/*'
+                      onChange={handlePhotoUpload}
+                      className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium focus:border-[#EAB308] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#FDE047] file:text-black hover:file:bg-[#EAB308] transition-all ${THEME.input}`}
                     />
                     <Camera
-                      className={`absolute left-4 top-4 h-5 w-5 ${THEME.textMuted}`}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${THEME.textMuted}`}
                     />
                   </div>
                 </div>
