@@ -4,7 +4,7 @@ import {
   getAuth,
   signInWithPopup,
   GoogleAuthProvider,
-  signInAnonymously, // Removido signInWithCustomToken pois não é usado localmente
+  signInAnonymously,
   onAuthStateChanged,
   signOut,
   User,
@@ -26,10 +26,10 @@ import {
   Plus,
   LogOut,
   BarChart3,
-  ChartColumnBig,
+  ChartColumn,
   History,
   CheckCircle2,
-  CalendarIcon,
+  Calendar as CalendarIcon, // Voltando para CalendarIcon como pedido
   PieChart as PieChartIcon,
   Clipboard,
   ArrowDown,
@@ -450,7 +450,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [timerIsActive, timerSeconds, timerMode]);
 
-  // CORREÇÃO DA AUTENTICAÇÃO
+  // CORREÇÃO: Lógica de Autenticação Restaurada
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
@@ -458,20 +458,19 @@ export default function App() {
         setLoading(false);
         setAuthError(null);
       } else {
-        // Se não houver usuário, tentar login anônimo
-        // Isso falhará se "Anonymous" não estiver ativado no Console do Firebase
+        // Se não houver usuário, tenta login anônimo
         signInAnonymously(auth).catch((error) => {
           console.error('Erro no login anônimo:', error);
           setLoading(false);
-          if (
-            error.code === 'auth/configuration-not-found' ||
-            error.code === 'auth/operation-not-allowed'
-          ) {
+          if (error.code === 'auth/admin-restricted-operation') {
+            // Erro específico quando o provedor "Anonymous" está desativado no console
             setAuthError(
-              "Erro: Ative a autenticação 'Anônima' no Console do Firebase."
+              "Erro: Ative a autenticação 'Anônima' no Console do Firebase (Authentication > Sign-in method)."
             );
+          } else if (error.code === 'auth/operation-not-allowed') {
+            setAuthError('Erro: O método de login não está habilitado.');
           } else {
-            setAuthError('Erro ao conectar com o servidor.');
+            setAuthError(`Erro ao conectar: ${error.message}`);
           }
         });
       }
@@ -581,8 +580,18 @@ export default function App() {
     triggerHaptic();
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error('Erro no Google Login:', e);
+      // Tratamento de erro específico para Google Login
+      if (e.code === 'auth/popup-closed-by-user') {
+        // Usuário fechou, não precisa mostrar erro grave
+      } else if (e.code === 'auth/unauthorized-domain') {
+        setAuthError(
+          'Domínio não autorizado. Adicione este domínio no Firebase Console > Authentication > Settings.'
+        );
+      } else {
+        setAuthError(`Erro no login: ${e.message}`);
+      }
     }
   };
 
@@ -1216,7 +1225,13 @@ export default function App() {
   // GRADIENT CUSTOMIZADO (DISCRETO) - Uniformizado com os botões
   const TEXT_GRADIENT =
     'bg-gradient-to-br from-[#FDE047] to-[#EAB308] bg-clip-text text-transparent';
-  const ICON_GRADIENT_STYLE = { stroke: 'url(#gold-gradient)' };
+
+  // NOVA COR SÓLIDA INTERMEDIÁRIA (#FACC15 - Yellow-400 do Tailwind)
+  const ICON_SOLID_COLOR = '#FACC15';
+  const ICON_SOLID_STYLE = { stroke: ICON_SOLID_COLOR };
+
+  // ESTILO ESPECÍFICO PARA O CABEÇALHO (MANTÉM O GRADIENTE)
+  const ICON_HEADER_STYLE = { stroke: 'url(#gold-gradient)' };
 
   const COLORS = [
     '#EAB308',
@@ -1434,7 +1449,20 @@ export default function App() {
   const selectedDayPercentage =
     dailyGoal > 0 ? Math.round((selectedDayTotal / dailyGoal) * 100) : 0;
 
-  if (!user && !loading) {
+  if (loading) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center p-4 ${THEME.bg}`}
+      >
+        <div className='w-full max-w-md space-y-4'>
+          <SkeletonCard isDarkMode={isDarkMode} />
+          <SkeletonCard isDarkMode={isDarkMode} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center p-4 antialiased ${
@@ -1465,8 +1493,9 @@ export default function App() {
         >
           <Activity
             className='h-12 w-12 mx-auto mb-4 animate-pulse'
-            style={ICON_GRADIENT_STYLE}
-          />
+            style={ICON_HEADER_STYLE}
+          />{' '}
+          {/* Header style preserved */}
           <h1
             className={`text-4xl font-extrabold ${
               isDarkMode ? 'text-white' : 'text-slate-900'
@@ -1504,7 +1533,6 @@ export default function App() {
               />
             </svg>
           </button>
-
           {authError && (
             <div className='mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2'>
               <AlertCircle className='h-4 w-4 shrink-0' /> {authError}
@@ -1553,7 +1581,7 @@ export default function App() {
             <div className='flex items-center gap-3'>
               <Activity
                 className='h-6 w-6 animate-in fade-in slide-in-from-left-1 duration-300'
-                style={ICON_GRADIENT_STYLE}
+                style={ICON_HEADER_STYLE}
               />
               <div>
                 <h1 className='text-xl font-extrabold tracking-tight leading-none animate-in fade-in slide-in-from-left-1 delay-150 duration-300 fill-mode-backwards'>
@@ -1691,8 +1719,7 @@ export default function App() {
                   <span
                     className={`text-xs font-bold ${THEME.textMuted} uppercase flex items-center gap-1`}
                   >
-                    <Trophy className='h-3 w-3' style={ICON_GRADIENT_STYLE} />{' '}
-                    META
+                    <Trophy className='h-3 w-3' style={ICON_SOLID_STYLE} /> META
                   </span>
                   {isEditingGoal ? (
                     <div className='flex items-center gap-1'>
@@ -1773,7 +1800,7 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  <Clock className='h-4 w-4' style={ICON_GRADIENT_STYLE} />
+                  <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
                     {getRangeLabel(timeRange)}
                   </span>
@@ -1799,7 +1826,7 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  <TrendingUp className='h-4 w-4' style={ICON_GRADIENT_STYLE} />
+                  <TrendingUp className='h-4 w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
                     Total
                   </span>
@@ -1815,10 +1842,7 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  <CheckCircle2
-                    className='h-4 w-4'
-                    style={ICON_GRADIENT_STYLE}
-                  />
+                  <CheckCircle2 className='h-4 w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
                     Sessões
                   </span>
@@ -2340,7 +2364,7 @@ export default function App() {
                 <h3
                   className={`font-bold ${THEME.text} flex items-center gap-2`}
                 >
-                  <Activity className='h-5 w-5' style={ICON_GRADIENT_STYLE} />{' '}
+                  <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} />{' '}
                   Frequência de Estudo
                 </h3>
                 <div
@@ -2412,7 +2436,7 @@ export default function App() {
               <h3
                 className={`font-bold ${THEME.text} flex items-center gap-2 mb-4`}
               >
-                <TrendingUp className='h-5 w-5' style={ICON_GRADIENT_STYLE} />{' '}
+                <TrendingUp className='h-5 w-5' style={ICON_SOLID_STYLE} />{' '}
                 Relatório de Comparação
               </h3>
               <div className='overflow-x-auto'>
@@ -2484,10 +2508,7 @@ export default function App() {
               <h3
                 className={`font-bold ${THEME.text} flex items-center gap-2 mb-6`}
               >
-                <ChartColumnBig
-                  className='h-5 w-5'
-                  style={ICON_GRADIENT_STYLE}
-                />{' '}
+                <ChartColumn className='h-5 w-5' style={ICON_SOLID_STYLE} />{' '}
                 Comparativo de Períodos
               </h3>
               <div className='w-full h-56'>
@@ -2566,7 +2587,7 @@ export default function App() {
                   <h3
                     className={`font-bold ${THEME.text} flex items-center gap-2`}
                   >
-                    <Activity className='h-5 w-5' style={ICON_GRADIENT_STYLE} />{' '}
+                    <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} />{' '}
                     Ritmo Diário
                   </h3>
                 </div>
@@ -2693,7 +2714,7 @@ export default function App() {
                   >
                     <LineChartIcon
                       className='h-5 w-5'
-                      style={ICON_GRADIENT_STYLE}
+                      style={ICON_SOLID_STYLE}
                     />{' '}
                     Estudo Acumulado
                   </h3>
@@ -2830,7 +2851,7 @@ export default function App() {
                   >
                     <PieChartIcon
                       className='h-5 w-5'
-                      style={ICON_GRADIENT_STYLE}
+                      style={ICON_SOLID_STYLE}
                     />{' '}
                     Distribuição
                   </h3>
@@ -3043,10 +3064,7 @@ export default function App() {
                   <h3
                     className={`font-bold ${THEME.text} flex items-center gap-2`}
                   >
-                    <Clipboard
-                      className='h-5 w-5'
-                      style={ICON_GRADIENT_STYLE}
-                    />{' '}
+                    <Clipboard className='h-5 w-5' style={ICON_SOLID_STYLE} />{' '}
                     Resumo Completo
                   </h3>
                   {/* ADDED TOTAL BELOW TITLE */}
@@ -3415,7 +3433,7 @@ export default function App() {
                   <p
                     className={`text-xs ${THEME.textMuted} mt-1 flex items-center justify-center gap-1`}
                   >
-                    <MapPin className='h-3 w-3' style={ICON_GRADIENT_STYLE} />{' '}
+                    <MapPin className='h-3 w-3' style={ICON_SOLID_STYLE} />{' '}
                     {profile.location}
                   </p>
                 )}
@@ -3443,8 +3461,8 @@ export default function App() {
                   isDarkMode ? 'border-neutral-800' : 'border-slate-100'
                 }`}
               >
-                <UserIcon className='h-5 w-5' style={ICON_GRADIENT_STYLE} />{' '}
-                Dados Pessoais
+                <UserIcon className='h-5 w-5' style={ICON_SOLID_STYLE} /> Dados
+                Pessoais
               </div>
               <div className='space-y-4'>
                 <div>
@@ -3571,64 +3589,97 @@ export default function App() {
           <button
             onClick={() => handleViewChange('home')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
-              view === 'home' ? 'text-[#EAB308] scale-110' : THEME.textMuted
+              view === 'home'
+                ? `text-[${ICON_SOLID_COLOR}] scale-110`
+                : THEME.textMuted
             }`}
           >
             <Home
               className='h-5 w-5'
-              style={view === 'home' ? ICON_GRADIENT_STYLE : {}}
+              style={view === 'home' ? ICON_SOLID_STYLE : {}}
             />
-            <span className='text-[10px] font-bold'>Início</span>
+            <span
+              className='text-[10px] font-bold'
+              style={{ color: view === 'home' ? ICON_SOLID_COLOR : '' }}
+            >
+              Início
+            </span>
           </button>
           <button
             onClick={() => handleViewChange('calendar')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
-              view === 'calendar' ? 'text-[#EAB308] scale-110' : THEME.textMuted
+              view === 'calendar'
+                ? `text-[${ICON_SOLID_COLOR}] scale-110`
+                : THEME.textMuted
             }`}
           >
             <CalendarIcon
               className='h-5 w-5'
-              style={view === 'calendar' ? ICON_GRADIENT_STYLE : {}}
+              style={view === 'calendar' ? ICON_SOLID_STYLE : {}}
             />
-            <span className='text-[10px] font-bold'>Calendário</span>
+            <span
+              className='text-[10px] font-bold'
+              style={{ color: view === 'calendar' ? ICON_SOLID_COLOR : '' }}
+            >
+              Calendário
+            </span>
           </button>
           <button
             onClick={() => handleViewChange('statistics')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
               view === 'statistics'
-                ? 'text-[#EAB308] scale-110'
+                ? `text-[${ICON_SOLID_COLOR}] scale-110`
                 : THEME.textMuted
             }`}
           >
             <Activity
               className='h-5 w-5'
-              style={view === 'statistics' ? ICON_GRADIENT_STYLE : {}}
+              style={view === 'statistics' ? ICON_SOLID_STYLE : {}}
             />
-            <span className='text-[10px] font-bold'>Estatísticas</span>
+            <span
+              className='text-[10px] font-bold'
+              style={{ color: view === 'statistics' ? ICON_SOLID_COLOR : '' }}
+            >
+              Estatísticas
+            </span>
           </button>
           <button
             onClick={() => handleViewChange('history')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
-              view === 'history' ? 'text-[#EAB308] scale-110' : THEME.textMuted
+              view === 'history'
+                ? `text-[${ICON_SOLID_COLOR}] scale-110`
+                : THEME.textMuted
             }`}
           >
             <History
               className='h-5 w-5'
-              style={view === 'history' ? ICON_GRADIENT_STYLE : {}}
+              style={view === 'history' ? ICON_SOLID_STYLE : {}}
             />
-            <span className='text-[10px] font-bold'>Histórico</span>
+            <span
+              className='text-[10px] font-bold'
+              style={{ color: view === 'history' ? ICON_SOLID_COLOR : '' }}
+            >
+              Histórico
+            </span>
           </button>
           <button
             onClick={() => handleViewChange('profile')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
-              view === 'profile' ? 'text-[#EAB308] scale-110' : THEME.textMuted
+              view === 'profile'
+                ? `text-[${ICON_SOLID_COLOR}] scale-110`
+                : THEME.textMuted
             }`}
           >
             <UserIcon
               className='h-5 w-5'
-              style={view === 'profile' ? ICON_GRADIENT_STYLE : {}}
+              style={view === 'profile' ? ICON_SOLID_STYLE : {}}
             />
-            <span className='text-[10px] font-bold'>Perfil</span>
+            <span
+              className='text-[10px] font-bold'
+              style={{ color: view === 'profile' ? ICON_SOLID_COLOR : '' }}
+            >
+              Perfil
+            </span>
           </button>
         </nav>
       )}
