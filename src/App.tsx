@@ -370,9 +370,7 @@ export default function App() {
   // PWA Install Listener
   useEffect(() => {
     const handler = (e: any) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setInstallPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handler);
@@ -414,7 +412,6 @@ export default function App() {
             if (prev <= 0) {
               setTimerIsActive(false);
               triggerHaptic();
-              // Optional: Play sound
               return 0;
             }
             return prev - 1;
@@ -429,7 +426,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [timerIsActive, timerSeconds, timerMode]);
 
-  // CORREÇÃO: Lógica de Autenticação Restaurada (Anônimo como fallback)
+  // AUTENTICAÇÃO: Google + Anônimo (Fallback)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
@@ -440,12 +437,11 @@ export default function App() {
         setUser(null);
         // Tenta login anônimo silenciosamente
         signInAnonymously(auth).catch((error) => {
-          console.warn(
-            'Login anônimo não permitido ou falhou (Isso é esperado se desativado no console):',
-            error
-          );
-          // Não definimos erro fatal aqui para permitir que o usuário veja a tela de login Google
+          console.warn('Login anônimo:', error.code);
           setLoading(false);
+          if (error.code === 'auth/admin-restricted-operation') {
+            setAuthError("Erro: Ative 'Anônimo' no Console.");
+          }
         });
         setLoading(false);
       }
@@ -464,14 +460,12 @@ export default function App() {
       'study_sessions'
     );
 
-    // Updated with validation to prevent crashes from invalid dates
     const unsubscribe = onSnapshot(
       sessionsRef,
       (snapshot) => {
         const loaded: StudySession[] = [];
         snapshot.docs.forEach((doc) => {
           const data = doc.data();
-          // Validation: Check if date exists and is valid
           const dateStr = data.date;
           if (dateStr && !isNaN(new Date(dateStr).getTime())) {
             loaded.push({
@@ -557,14 +551,7 @@ export default function App() {
       await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (e: any) {
       console.error('Erro no Google Login:', e);
-      // Tratamento de erro específico para Google Login
-      if (e.code === 'auth/popup-closed-by-user') {
-        // Usuário fechou, não precisa mostrar erro grave
-      } else if (e.code === 'auth/unauthorized-domain') {
-        setAuthError(
-          'Domínio não autorizado. Adicione este domínio no Firebase Console > Authentication > Settings.'
-        );
-      } else {
+      if (e.code !== 'auth/popup-closed-by-user') {
         setAuthError(`Erro no login: ${e.message}`);
       }
     }
@@ -576,7 +563,6 @@ export default function App() {
     setSessions([]);
   };
 
-  // PWA Install Handler
   const handleInstallClick = async () => {
     if (!installPrompt) return;
     triggerHaptic();
@@ -592,7 +578,6 @@ export default function App() {
     setFormError(null);
     if (!user || !subjectInput || !duration || !selectedDate) return;
 
-    // Future Date Validation
     const selectedTime = new Date(selectedDate).getTime();
     const now = new Date().getTime();
     if (selectedTime > now) {
@@ -649,12 +634,10 @@ export default function App() {
       return;
     }
 
-    // Calculate elapsed minutes
     let minutesToSave = 0;
     if (timerMode === 'stopwatch') {
       minutesToSave = Math.round(timerSeconds / 60);
     } else {
-      // For countdown, save the duration that passed (Initial - Current)
       const elapsed = countdownInitialMinutes * 60 - timerSeconds;
       minutesToSave = Math.round(elapsed / 60);
     }
@@ -679,13 +662,12 @@ export default function App() {
         }
       );
 
-      // Reset Timer State
       setTimerSeconds(0);
       setTimerIsActive(false);
       setSubjectInput('');
-      setDuration(''); // Clear duration input as well
+      setDuration('');
       setShowSuggestions(false);
-      setView('home'); // Go back to home
+      setView('home');
       if (typeof navigator !== 'undefined' && navigator.vibrate)
         navigator.vibrate([30, 50, 30]);
     } catch (e) {
@@ -723,6 +705,7 @@ export default function App() {
     }
   };
 
+  // UPLOAD DE FOTO (Base64)
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -758,7 +741,6 @@ export default function App() {
   };
 
   const handleTimerExit = () => {
-    // FORCE RESET AND CLOSE - No confirmation
     setTimerIsActive(false);
     if (timerMode === 'countdown') {
       setTimerSeconds(countdownInitialMinutes * 60);
@@ -1525,12 +1507,18 @@ export default function App() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap');
+        /* Hide scrollbar for Chrome, Safari and Opera */
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
+        /* Hide scrollbar for IE, Edge and Firefox */
         .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+        /* Bloqueia o 'pull-to-refresh' para comportamento nativo */
+        body {
+          overscroll-behavior-y: none;
         }
       `}</style>
 
