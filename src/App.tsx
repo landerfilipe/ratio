@@ -3588,7 +3588,7 @@ export default function App() {
           >
             <CalendarIcon
               className='h-5 w-5'
-              style={view === 'CalendarIcon' ? ICON_GRADIENT_STYLE : {}}
+              style={view === 'calendar' ? ICON_GRADIENT_STYLE : {}}
             />
             <span className='text-[10px] font-bold'>Calendário</span>
           </button>
