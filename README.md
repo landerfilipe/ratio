@@ -71,3 +71,8 @@ export default defineConfig([
   },
 ])
 ```
+
+Trava 4: O Código Defensivo (Emuladores)
+A melhor economia é não usar a nuvem enquanto programa. No seu arquivo package.json, garanta que o comando de iniciar o app use os emuladores.
+
+Em vez de apenas npm run start, você deve configurar para rodar: firebase emulators:start
