@@ -14,10 +14,7 @@ export default defineConfig({
         description: 'Gerencie seus estudos com estatísticas avançadas.',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
-
-        // MUDANÇA AQUI: 'fullscreen' esconde a barra de status e os botões de navegação
         display: 'fullscreen',
-
         orientation: 'portrait',
         icons: [
           {
@@ -35,4 +32,28 @@ export default defineConfig({
       },
     }),
   ],
+  // === CODE SPLITTING: Vendor Chunking para Performance ===
+  // Separa bibliotecas pesadas em chunks independentes para melhor cache
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core - raramente muda
+          'vendor-react': ['react', 'react-dom'],
+          // Firebase - carregado apenas quando necessário para auth
+          'vendor-firebase': [
+            'firebase/app',
+            'firebase/auth',
+            'firebase/firestore',
+          ],
+          // Recharts - PESADO, só carrega na view Statistics
+          'vendor-recharts': ['recharts'],
+          // Ícones - tree-shaking já otimiza, mas separar melhora cache
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
+    // Aumenta limite de warning para chunks grandes (Recharts é ~300KB)
+    chunkSizeWarningLimit: 600,
+  },
 });
