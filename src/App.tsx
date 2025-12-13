@@ -1605,7 +1605,7 @@ export default function App() {
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
-                <div className='text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500'>
+                <div className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 ${THEME.text}`}>
                   {formatDurationDetailed(stats.rangeMinutes)}
                 </div>
                 {/* Period Card Logic SWAPPED: Now has ONLY Percentage + Color (No arrows/symbols) */}
@@ -1631,7 +1631,7 @@ export default function App() {
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
-                <div className='text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100'>
+                <div className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100 ${THEME.text}`}>
                   {formatDurationDetailed(stats.totalMinutes)}
                 </div>
               </div>
@@ -1647,7 +1647,7 @@ export default function App() {
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
-                <div className='text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150'>
+                <div className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 ${THEME.text}`}>
                   {stats.filteredCount}
                 </div>
               </div>

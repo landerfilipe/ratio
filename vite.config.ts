@@ -30,30 +30,98 @@ export default defineConfig({
           },
         ],
       },
+      // Workbox config for better caching
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
     }),
   ],
-  // === CODE SPLITTING: Vendor Chunking para Performance ===
-  // Separa bibliotecas pesadas em chunks independentes para melhor cache
+  // === AGGRESSIVE CODE SPLITTING ===
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React core - raramente muda
-          'vendor-react': ['react', 'react-dom'],
-          // Firebase - carregado apenas quando necessário para auth
-          'vendor-firebase': [
-            'firebase/app',
-            'firebase/auth',
-            'firebase/firestore',
-          ],
-          // Recharts - PESADO, só carrega na view Statistics
-          'vendor-recharts': ['recharts'],
-          // Ícones - tree-shaking já otimiza, mas separar melhora cache
-          'vendor-icons': ['lucide-react'],
+        // Function-based chunking for granular control
+        manualChunks: (id: string) => {
+          // Firebase - split into smaller chunks
+          if (id.includes('firebase/auth')) {
+            return 'vendor-firebase-auth';
+          }
+          if (id.includes('firebase/firestore')) {
+            return 'vendor-firebase-db';
+          }
+          if (id.includes('firebase/app') || id.includes('@firebase/app')) {
+            return 'vendor-firebase-core';
+          }
+          
+          // Recharts - only loaded when Statistics view accessed
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'vendor-recharts';
+          }
+          
+          // React core - cached aggressively
+          if (id.includes('node_modules/react-dom')) {
+            return 'vendor-react-dom';
+          }
+          if (id.includes('node_modules/react/') || id.includes('node_modules/scheduler')) {
+            return 'vendor-react';
+          }
+          
+          // Icons - tree-shaken but still separate
+          if (id.includes('lucide-react')) {
+            return 'vendor-icons';
+          }
         },
       },
     },
-    // Aumenta limite de warning para chunks grandes (Recharts é ~300KB)
+    // Target modern browsers for smaller output
+    target: 'es2020',
+    // Increase limit for recharts
     chunkSizeWarningLimit: 600,
+    // Better minification
+    minify: 'esbuild',
+    // CSS code splitting
+    cssCodeSplit: true,
+    // Source maps only in dev
+    sourcemap: false,
+  },
+  // Optimize dependencies - fix es-toolkit module resolution
+  optimizeDeps: {
+    include: [
+      'react', 
+      'react-dom',
+      'recharts',
+      'es-toolkit',
+      'es-toolkit/compat',
+    ],
   },
 });

@@ -6,13 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="description" content="Ratio - Gerencie seus estudos com estatísticas avançadas" />
-    <!-- Preconnect para Google Fonts (elimina latência DNS/TLS) -->
+    
+    <!-- Critical CSS Inline (prevents render-blocking) -->
+    <style>
+      /* Reset and base */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html { font-family: 'Urbanist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      body { 
+        background-color: #0a0a0a; 
+        color: #fff; 
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      #root { min-height: 100vh; min-height: 100dvh; }
+      
+      /* Font display swap for instant text */
+      @font-face {
+        font-family: 'Urbanist';
+        font-display: swap;
+        src: local('Urbanist');
+      }
+    </style>
+    
+    <!-- Preconnect for Google Fonts (eliminates DNS/TLS latency) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Preload da fonte para evitar render-blocking -->
+    
+    <!-- Non-blocking font loading -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap"></noscript>
+    
     <title>Ratio, Evolução Calculada!</title>
   </head>
   <body>

@@ -225,6 +225,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   chartType,
   setChartType,
 }) => {
+
   const HEATMAP_COLORS = getHeatmapColors(isDarkMode);
   const CustomYAxisTick = createCustomYAxisTick(isDarkMode);
   const CustomRadarTick = createCustomRadarTick(isDarkMode);
@@ -233,7 +234,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
     <ul
       className={`flex flex-wrap justify-center gap-2 mt-4 text-xs ${THEME.textMuted}`}
     >
-      {stats.pieLegendData.map((entry: ChartDataItem, index: number) => (
+      {(stats.pieLegendData || []).map((entry: ChartDataItem, index: number) => (
         <li key={index} className='flex items-center gap-1'>
           <span
             className='w-3 h-3 rounded-sm'
@@ -267,7 +268,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
           className='flex justify-start w-full gap-1 flex-wrap content-start'
           style={{ maxHeight: '200px', overflowY: 'hidden' }}
         >
-          {stats.heatmapData.map((day: HeatmapDataItem, idx: number) => (
+          {(stats.heatmapData || []).map((day: HeatmapDataItem, idx: number) => (
             <div
               key={idx}
               title={`${new Date(day.date).toLocaleDateString()}: ${formatDurationDetailed(day.count)}`}
@@ -324,7 +325,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {stats.evolutionReport.map((row: EvolutionReportItem) => (
+              {(stats.evolutionReport || []).map((row: EvolutionReportItem) => (
                 <tr key={row.days} className={`border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'}`}>
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
                   <td className={`py-2.5 text-center ${THEME.textMuted}`}>{row.prev}</td>
@@ -611,7 +612,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                     dataKey='value'
                     stroke='none'
                   >
-                    {stats.pieAllData.map((entry: ChartDataItem, index: number) => (
+                    {(stats.pieAllData || []).map((entry: ChartDataItem, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -681,7 +682,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                     labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
                   />
                   <Bar dataKey='value' radius={[0, 4, 4, 0]}>
-                    {stats.barChartData.map((entry: ChartDataItem, index: number) => (
+                    {(stats.barChartData || []).map((entry: ChartDataItem, index: number) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={entry.name === 'Outras Matérias' ? '#525252' : COLORS[index % COLORS.length]}
@@ -720,7 +721,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
           </button>
         </div>
         <div className='space-y-2 max-h-96 overflow-y-auto hide-scrollbar'>
-          {stats.listData.map((item: ChartDataItem, index: number) => (
+          {(stats.listData || []).map((item: ChartDataItem, index: number) => (
             <div
               key={index}
               className={`flex justify-between items-center p-3 rounded-xl border ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'} ${
