@@ -72,15 +72,9 @@ export default defineConfig({
       output: {
         // Function-based chunking for granular control
         manualChunks: (id: string) => {
-          // Firebase - split into smaller chunks
-          if (id.includes('firebase/auth')) {
-            return 'vendor-firebase-auth';
-          }
-          if (id.includes('firebase/firestore')) {
-            return 'vendor-firebase-db';
-          }
-          if (id.includes('firebase/app') || id.includes('@firebase/app')) {
-            return 'vendor-firebase-core';
+          // Firebase - keep together to avoid circular dependency issues
+          if (id.includes('firebase') || id.includes('@firebase')) {
+            return 'vendor-firebase';
           }
           
           // Recharts - only loaded when Statistics view accessed
