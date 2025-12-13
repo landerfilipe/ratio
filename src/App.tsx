@@ -5,20 +5,14 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import { initializeApp } from 'firebase/app';
 import {
-  getAuth,
   signInWithPopup,
   GoogleAuthProvider,
   signInAnonymously,
   onAuthStateChanged,
   signOut,
-  User,
-  setPersistence,
-  browserLocalPersistence,
 } from 'firebase/auth';
 import {
-  getFirestore,
   collection,
   addDoc,
   onSnapshot,
@@ -26,7 +20,6 @@ import {
   deleteDoc,
   setDoc,
   getDoc,
-  enableIndexedDbPersistence,
 } from 'firebase/firestore';
 import {
   Clock,
@@ -60,7 +53,6 @@ import {
   Sun,
   ArrowDownWideNarrow,
   ArrowUpWideNarrow,
-  ArrowRight,
   Edit2,
   X,
   Check,
@@ -93,269 +85,40 @@ import {
   PolarRadiusAxis,
 } from 'recharts';
 
-// --- Lista Fixa de Disciplinas ---
-const FIXED_SUBJECTS = [
-  'Administração Financeira Orçamentária (AFO)',
-  'Administração Geral',
-  'Administração Pública',
-  'Administração de Materiais',
-  'Análise Técnica',
-  'Arquivologia',
-  'Artes',
-  'Astronomia',
-  'Atualidades',
-  'Auditoria',
-  'Biografia',
-  'Biologia',
-  'Bíblia',
-  'Cibersegurança',
-  'Ciência de Dados',
-  'Ciências Sociais',
-  'Conhecimentos Bancários',
-  'Conhecimentos Gerais',
-  'Contabilidade Geral',
-  'Contabilidade Pública',
-  'Criminologia',
-  'Direito Administrativo',
-  'Direito Ambiental',
-  'Direito Civil',
-  'Direito Constitucional',
-  'Direito Digital',
-  'Direito Econômico',
-  'Direito Educacional',
-  'Direito Eleitoral',
-  'Direito Empresarial',
-  'Direito Financeiro',
-  'Direito Internacional',
-  'Direito Penal',
-  'Direito Previdenciário',
-  'Direito Processual Civil',
-  'Direito Processual Penal',
-  'Direito Processual do Trabalho',
-  'Direito Tributário',
-  'Direito da Criança e do Adolescente',
-  'Direito do Consumidor',
-  'Direito do Trabalho',
-  'Direitos Humanos',
-  'Economia',
-  'Educação Física',
-  'Engenharia de Software',
-  'Espanhol',
-  'Estatística',
-  'Farmácia',
-  'Filosofia',
-  'Finanças',
-  'Física',
-  'Francês',
-  'Geografia',
-  'Geopolítica',
-  'Gestão de Pessoas',
-  'Gestão de Projetos',
-  'Grego',
-  'Hebraico',
-  'História',
-  'Informática',
-  'Inglês',
-  'Inteligência Artificial',
-  'Investimentos',
-  'Japonês',
-  'Latim',
-  'Legislação Especial',
-  'Legislação Específica',
-  'Legislação Tributária',
-  'Legislação de Trânsito',
-  'Libras',
-  'Licitações e Contratos',
-  'Literatura',
-  'Lógica',
-  'Marketing',
-  'Matemática',
-  'Matemática Financeira',
-  'Medicina',
-  'Medicina Legal',
-  'Nutrição',
-  'Oratória',
-  'Português',
-  'Produtividade',
-  'Programação',
-  'Provas e Simulados',
-  'Psicologia',
-  'Qconcursos',
-  'Química',
-  'Redação',
-  'Russo',
-  'Sociologia',
-  'TECconcursos',
-  'Teologia',
-  'Vendas e Negociação',
-  'Xadrez',
-  'Ética',
-].sort();
+// --- Imports from lib/ modules (Code Splitting) ---
+import { auth, db, appId } from './lib/firebase';
+import { FIXED_SUBJECTS } from './lib/subjects';
+import {
+  formatDurationDetailed,
+  formatGoalDuration,
+  formatAxisTick,
+  formatTimeComponents,
+  normalizeString,
+  triggerHaptic,
+  getRangeLabel,
+} from './lib/helpers';
+import {
+  COLORS,
+  getHeatmapColors,
+  TEXT_GRADIENT,
+  ICON_SOLID_COLOR,
+  ICON_SOLID_STYLE,
+  ICON_HEADER_STYLE,
+  getThemeClasses,
+} from './lib/theme';
+import type {
+  StudySession,
+  UserProfile,
+  TimeRange,
+  SortOrder,
+  ViewState,
+  TimerMode,
+  BeforeInstallPromptEvent,
+  CustomTickProps,
+  User,
+} from './types';
+import { LoginSkeleton } from './components/Skeletons';
 
-// --- Firebase Configuration ---
-const firebaseConfig = {
-  apiKey: 'AIzaSyBnlxuas5xmymrPxfhpazArQ0HbtpmGfgM',
-  authDomain: 'ratio-5bfb8.firebaseapp.com',
-  projectId: 'ratio-5bfb8',
-  storageBucket: 'ratio-5bfb8.firebasestorage.app',
-  messagingSenderId: '898252667000',
-  appId: '1:898252667000:web:52285afd441aae47b0d58d',
-  measurementId: 'G-2WCW0LX4T6',
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = 'ratio-5bfb8';
-
-// --- Ativar Persistência Offline (Cache Inteligente) ---
-try {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Persistência falhou: Multiplas abas abertas.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Persistência não suportada neste navegador.');
-    }
-  });
-} catch (e) {
-  console.log('Persistência já habilitada ou erro ao habilitar');
-}
-
-// --- Types & Interfaces ---
-interface StudySession {
-  id: string;
-  subject: string;
-  durationMinutes: number;
-  date: string;
-  timestamp: number;
-}
-
-interface UserProfile {
-  name: string;
-  surname: string;
-  birthdate: string;
-  location: string;
-  bio: string;
-  photoUrl: string;
-  dailyGoalMinutes?: number;
-}
-
-type TimeRange =
-  | 'day'
-  | '7_days'
-  | '14_days'
-  | '30_days'
-  | '90_days'
-  | '180_days'
-  | '360_days';
-type SortOrder = 'desc' | 'asc';
-type ViewState =
-  | 'home'
-  | 'statistics'
-  | 'calendar'
-  | 'history'
-  | 'profile'
-  | 'timer';
-type TimerMode = 'stopwatch' | 'countdown';
-
-// --- Interfaces para Tipagem Estrita (eliminar `any`) ---
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-  prompt(): Promise<void>;
-}
-
-// Interface simplificada para custom ticks do Recharts
-// Não estende SVGProps para evitar conflitos de tipo com propriedades como textAnchor
-interface CustomTickProps {
-  x?: number;
-  y?: number;
-  payload?: { value: string | number };
-  textAnchor?: 'start' | 'middle' | 'end' | 'inherit';
-}
-
-// --- Helpers de Formatação ---
-
-const formatDurationDetailed = (mins: number) => {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h === 0) return `${m}min`;
-  const mString = m.toString().padStart(2, '0');
-  return `${h}h${mString}min`;
-};
-
-const formatDurationShort = (mins: number) => {
-  const h = Math.round(mins / 60);
-  return `${h}h`;
-};
-
-const formatGoalDuration = (mins: number) => {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (m === 0) return `${h}h`;
-  return `${h}h${m}m`;
-};
-
-const formatAxisTick = (mins: number) => {
-  const h = Math.round(mins / 60);
-  return `${h}h`;
-};
-
-// Separates time into { main: "HH:MM", super: "SS" }
-const formatTimeComponents = (seconds: number) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-
-  const mStr = m.toString().padStart(2, '0');
-  const sStr = s.toString().padStart(2, '0');
-
-  if (h > 0) {
-    return { main: `${h}:${mStr}`, super: sStr };
-  }
-  return { main: mStr, super: sStr };
-};
-
-// --- NOVO: Componente LoginSkeleton (Imita o layout da caixa de login) ---
-const LoginSkeleton = ({ isDarkMode }: { isDarkMode: boolean }) => (
-  <div
-    className={`rounded-2xl shadow-xl p-8 max-w-md w-full border animate-pulse ${
-      isDarkMode
-        ? 'bg-neutral-900 border-neutral-800'
-        : 'bg-white border-slate-200'
-    }`}
-  >
-    {/* Ícone Redondo */}
-    <div
-      className={`h-12 w-12 mx-auto mb-4 rounded-full ${
-        isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-      }`}
-    ></div>
-    {/* Título Grande */}
-    <div
-      className={`h-8 w-32 mx-auto mb-2 rounded ${
-        isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-      }`}
-    ></div>
-    {/* Subtítulo Pequeno */}
-    <div
-      className={`h-4 w-48 mx-auto mb-8 rounded ${
-        isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-      }`}
-    ></div>
-    {/* Botão Largo */}
-    <div
-      className={`h-14 w-full rounded-xl ${
-        isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-      }`}
-    ></div>
-  </div>
-);
-
-const triggerHaptic = () => {
-  if (typeof navigator !== 'undefined' && navigator.vibrate)
-    navigator.vibrate(10);
-};
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -1294,78 +1057,9 @@ export default function App() {
     profile.dailyGoalMinutes,
   ]);
 
-  // --- Theme Colors (GOLD / DARK) ---
-  const THEME = {
-    bg: isDarkMode ? 'bg-neutral-950' : 'bg-slate-50',
-    // Added transition classes to cards for smoother theme switch
-    card:
-      (isDarkMode
-        ? 'bg-neutral-900 border-neutral-800'
-        : 'bg-white border-slate-200') + ' transition-colors duration-200',
-    text: isDarkMode ? 'text-white' : 'text-slate-800',
-    textMuted: isDarkMode ? 'text-neutral-400' : 'text-slate-500',
-    // Added transition classes to inputs
-    input:
-      (isDarkMode
-        ? 'bg-neutral-900 border-neutral-700 text-white'
-        : 'bg-slate-50 border-slate-300 text-slate-800') +
-      ' transition-colors duration-200',
-    accent: '#EAB308',
-    accentText: 'text-[#EAB308]',
-    accentBg: 'bg-[#EAB308]',
-    danger: 'text-red-500',
-    success: 'text-green-500',
-  };
-
-  // GRADIENT CUSTOMIZADO (DISCRETO) - Uniformizado com os botões
-  const TEXT_GRADIENT =
-    'bg-gradient-to-br from-[#FDE047] to-[#EAB308] bg-clip-text text-transparent';
-
-  // NOVA COR SÓLIDA INTERMEDIÁRIA (#FACC15 - Yellow-400 do Tailwind)
-  const ICON_SOLID_COLOR = '#FACC15';
-  const ICON_SOLID_STYLE = { stroke: ICON_SOLID_COLOR };
-
-  // ESTILO ESPECÍFICO PARA O CABEÇALHO (MANTÉM O GRADIENTE)
-  const ICON_HEADER_STYLE = { stroke: 'url(#gold-gradient)' };
-
-  const COLORS = [
-    '#EAB308',
-    '#CA8A04',
-    '#A16207',
-    '#854D0E',
-    '#713F12',
-    '#FEF08A',
-    '#FDE047',
-    '#FACC15',
-    '#F59E0B',
-    '#D97706',
-    '#B45309',
-    '#525252',
-  ];
-  const HEATMAP_COLORS = isDarkMode
-    ? ['#262626', '#423606', '#715d0b', '#a1860f', '#EAB308']
-    : ['#f3f4f6', '#fef9c3', '#fde047', '#eab308', '#ca8a04'];
-
-  const getRangeLabel = (range: TimeRange) => {
-    switch (range) {
-      case 'day':
-        return 'Hoje';
-      case '7_days':
-        return '7 Dias';
-      case '14_days':
-        return '14 Dias';
-      case '30_days':
-        return '30 Dias';
-      case '90_days':
-        return '90 Dias';
-      case '180_days':
-        return '180 Dias';
-      case '360_days':
-        return '360 Dias';
-      default:
-        return 'Período';
-    }
-  };
+  // --- Theme Colors (imported from lib/theme.ts) ---
+  const THEME = getThemeClasses(isDarkMode);
+  const HEATMAP_COLORS = getHeatmapColors(isDarkMode);
 
   // Tipagem estrita para Recharts custom tick (remove `any`)
   const CustomYAxisTick = ({ x = 0, y = 0, payload }: CustomTickProps) => {
