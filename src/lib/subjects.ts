@@ -1,6 +1,6 @@
 // --- Lista Fixa de Disciplinas ---
 export const FIXED_SUBJECTS = [
-  'Administração Financeira Orçamentária (AFO)',
+  'Administração Financeira Orçamentária',
   'Administração Geral',
   'Administração Pública',
   'Administração de Materiais',
@@ -14,6 +14,7 @@ export const FIXED_SUBJECTS = [
   'Biologia',
   'Bíblia',
   'Cibersegurança',
+  'Ciência da Computação',
   'Ciência de Dados',
   'Ciências Sociais',
   'Conhecimentos Bancários',
@@ -44,9 +45,11 @@ export const FIXED_SUBJECTS = [
   'Direitos Humanos',
   'Economia',
   'Educação Física',
+  'Engenharia de Prompt (IA)',
   'Engenharia de Software',
   'Espanhol',
   'Estatística',
+  'Ética',
   'Farmácia',
   'Filosofia',
   'Finanças',
@@ -93,6 +96,6 @@ export const FIXED_SUBJECTS = [
   'TECconcursos',
   'Teologia',
   'Vendas e Negociação',
+  'Vibe Coding',
   'Xadrez',
-  'Ética',
 ].sort();
