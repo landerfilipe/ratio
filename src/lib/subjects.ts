@@ -72,6 +72,7 @@ export const FIXED_SUBJECTS = [
   'Legislação Específica',
   'Legislação Tributária',
   'Legislação de Trânsito',
+  'Leitura',
   'Libras',
   'Licitações e Contratos',
   'Literatura',
