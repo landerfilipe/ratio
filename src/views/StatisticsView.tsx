@@ -728,9 +728,9 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               key={index}
               className={`flex justify-between items-center py-3 border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'} last:border-b-0`}
             >
-              <div className='flex items-center gap-2 overflow-hidden min-w-0 flex-1'>
-                <div className='w-2 h-2 rounded-sm shrink-0' style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                <span className={`text-sm font-medium truncate ${THEME.text}`}>{item.name}</span>
+              <div className='flex items-center gap-3 overflow-hidden'>
+                <div className='w-2.5 h-2.5 rounded-sm shrink-0' style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                <span className={`text-sm font-medium truncate max-w-[140px] sm:max-w-[220px] ${THEME.text}`}>{item.name}</span>
               </div>
               <div className='flex gap-1.5 text-xs font-bold shrink-0 items-center'>
                 <span className={`px-1.5 py-0.5 rounded whitespace-nowrap ${isDarkMode ? 'bg-neutral-800 text-neutral-300' : 'bg-white text-slate-600 border'}`}>
