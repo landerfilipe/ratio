@@ -75,7 +75,9 @@ const StatisticsSkeleton = ({ isDarkMode }: { isDarkMode: boolean }) => (
     {[1, 2, 3, 4].map((i) => (
       <div
         key={i}
-        className={`rounded-2xl p-6 ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}
+        className={`rounded-2xl p-6 ${
+          isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'
+        }`}
         style={{ height: i === 1 ? 200 : 280 }}
       />
     ))}
@@ -116,7 +118,6 @@ import type {
   User,
 } from './types';
 import { LoginSkeleton } from './components/Skeletons';
-
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -166,7 +167,8 @@ export default function App() {
 
   // PWA Install State
   // Tipagem estrita para PWA install prompt (economiza debugging e evita erros de runtime)
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installPrompt, setInstallPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
 
   // Timer State with Persistence
   const [timerMode, setTimerMode] = useState<TimerMode>(() => {
@@ -410,7 +412,9 @@ export default function App() {
       console.error('Erro no Google Login:', e);
       const firebaseError = e as { code?: string; message?: string };
       if (firebaseError.code !== 'auth/popup-closed-by-user') {
-        setAuthError(`Erro no login: ${firebaseError.message || 'Erro desconhecido'}`);
+        setAuthError(
+          `Erro no login: ${firebaseError.message || 'Erro desconhecido'}`
+        );
       }
     }
   }, []);
@@ -768,10 +772,19 @@ export default function App() {
     for (let i = 0; i < lineDaysLimit; i++) {
       const d = new Date(lineStartDate);
       d.setDate(d.getDate() + i);
-      lineMap.set(d.toISOString().split('T')[0], 0);
+      // Use local date components to build key (avoids UTC shift)
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      lineMap.set(`${y}-${m}-${day}`, 0);
     }
     sessions.forEach((s) => {
-      const sDateStr = s.date.split('T')[0];
+      // Convert ISO string to local date to get correct local day
+      const dateObj = new Date(s.date);
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const sDateStr = `${y}-${m}-${day}`;
       if (lineMap.has(sDateStr))
         lineMap.set(sDateStr, (lineMap.get(sDateStr) || 0) + s.durationMinutes);
     });
@@ -849,10 +862,19 @@ export default function App() {
     for (let i = 0; i < rhythmDays + maWindow + 1; i++) {
       const d = new Date(rhythmStart);
       d.setDate(d.getDate() + i);
-      rhythmMap.set(d.toISOString().split('T')[0], 0);
+      // Use local date components to build key (avoids UTC shift)
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      rhythmMap.set(`${y}-${m}-${day}`, 0);
     }
     sessions.forEach((s) => {
-      const sDateStr = s.date.split('T')[0];
+      // Convert ISO string to local date to get correct local day
+      const dateObj = new Date(s.date);
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const sDateStr = `${y}-${m}-${day}`;
       if (rhythmMap.has(sDateStr))
         rhythmMap.set(
           sDateStr,
@@ -1429,7 +1451,9 @@ export default function App() {
                   setIsDarkMode(!isDarkMode);
                   triggerHaptic();
                 }}
-                aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                aria-label={
+                  isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'
+                }
                 className={`p-2 rounded-full active:scale-90 transition-transform ${
                   isDarkMode
                     ? 'bg-neutral-800 hover:bg-neutral-700'
@@ -1444,7 +1468,7 @@ export default function App() {
               </button>
               <button
                 onClick={handleLogout}
-                aria-label="Sair da conta"
+                aria-label='Sair da conta'
                 className='text-xs bg-neutral-800 hover:bg-neutral-700 text-white px-3 py-2 rounded-lg flex gap-1 items-center font-bold transition-all active:scale-95'
               >
                 <LogOut className='h-3 w-3' />
@@ -1605,7 +1629,9 @@ export default function App() {
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
-                <div className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 ${THEME.text}`}>
+                <div
+                  className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 ${THEME.text}`}
+                >
                   {formatDurationDetailed(stats.rangeMinutes)}
                 </div>
                 {/* Period Card Logic SWAPPED: Now has ONLY Percentage + Color (No arrows/symbols) */}
@@ -1631,7 +1657,9 @@ export default function App() {
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
-                <div className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100 ${THEME.text}`}>
+                <div
+                  className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100 ${THEME.text}`}
+                >
                   {formatDurationDetailed(stats.totalMinutes)}
                 </div>
               </div>
@@ -1647,7 +1675,9 @@ export default function App() {
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
-                <div className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 ${THEME.text}`}>
+                <div
+                  className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 ${THEME.text}`}
+                >
                   {stats.filteredCount}
                 </div>
               </div>
@@ -2039,7 +2069,7 @@ export default function App() {
               <div className='flex items-center gap-6 mb-8 flex-shrink-0'>
                 <button
                   onClick={handleTimerReset}
-                  aria-label="Resetar cronômetro"
+                  aria-label='Resetar cronômetro'
                   className={`p-3 rounded-full transition-all active:scale-95 ${
                     isDarkMode
                       ? 'text-neutral-500 hover:text-white hover:bg-neutral-800'
@@ -2053,7 +2083,9 @@ export default function App() {
                 {/* Minimalist Play/Pause Button - Thin ring */}
                 <button
                   onClick={handleTimerStart}
-                  aria-label={timerIsActive ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
+                  aria-label={
+                    timerIsActive ? 'Pausar cronômetro' : 'Iniciar cronômetro'
+                  }
                   className={`w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 border ${
                     timerIsActive
                       ? 'border-red-500/50 text-red-500 hover:bg-red-500/10'
@@ -2202,7 +2234,7 @@ export default function App() {
                       );
                       triggerHaptic();
                     }}
-                    aria-label="Mês anterior"
+                    aria-label='Mês anterior'
                     className={`p-2 rounded-full ${THEME.textMuted} hover:bg-neutral-800`}
                   >
                     <ChevronLeft className='h-5 w-5' />
@@ -2218,7 +2250,7 @@ export default function App() {
                       );
                       triggerHaptic();
                     }}
-                    aria-label="Próximo mês"
+                    aria-label='Próximo mês'
                     className={`p-2 rounded-full ${THEME.textMuted} hover:bg-neutral-800`}
                   >
                     <ChevronRight className='h-5 w-5' />
@@ -2289,8 +2321,12 @@ export default function App() {
                     <div
                       key={session.id}
                       className={`flex items-center justify-between py-3 ${
-                        index < selectedDaySessions.length - 1 
-                          ? `border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'}` 
+                        index < selectedDaySessions.length - 1
+                          ? `border-b ${
+                              isDarkMode
+                                ? 'border-neutral-800'
+                                : 'border-slate-200'
+                            }`
                           : ''
                       }`}
                     >
@@ -2622,7 +2658,7 @@ export default function App() {
         >
           <button
             onClick={() => handleViewChange('home')}
-            aria-label="Ir para página inicial"
+            aria-label='Ir para página inicial'
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
               view === 'home'
                 ? `text-[${ICON_SOLID_COLOR}] scale-110`
@@ -2642,7 +2678,7 @@ export default function App() {
           </button>
           <button
             onClick={() => handleViewChange('calendar')}
-            aria-label="Abrir calendário"
+            aria-label='Abrir calendário'
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
               view === 'calendar'
                 ? `text-[${ICON_SOLID_COLOR}] scale-110`
@@ -2662,7 +2698,7 @@ export default function App() {
           </button>
           <button
             onClick={() => handleViewChange('statistics')}
-            aria-label="Ver estatísticas de estudo"
+            aria-label='Ver estatísticas de estudo'
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
               view === 'statistics'
                 ? `text-[${ICON_SOLID_COLOR}] scale-110`
@@ -2682,7 +2718,7 @@ export default function App() {
           </button>
           <button
             onClick={() => handleViewChange('history')}
-            aria-label="Ver histórico de sessões"
+            aria-label='Ver histórico de sessões'
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
               view === 'history'
                 ? `text-[${ICON_SOLID_COLOR}] scale-110`
@@ -2702,7 +2738,7 @@ export default function App() {
           </button>
           <button
             onClick={() => handleViewChange('profile')}
-            aria-label="Abrir configurações de perfil"
+            aria-label='Abrir configurações de perfil'
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-16 transition-all ${
               view === 'profile'
                 ? `text-[${ICON_SOLID_COLOR}] scale-110`
