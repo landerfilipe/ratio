@@ -16,6 +16,7 @@ export const FIXED_SUBJECTS = [
   'Cibersegurança',
   'Ciência da Computação',
   'Ciência de Dados',
+  'Ciências Políticas',
   'Ciências Sociais',
   'Conhecimentos Bancários',
   'Conhecimentos Gerais',
