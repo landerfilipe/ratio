@@ -96,7 +96,7 @@ export const FIXED_SUBJECTS = [
   'Redação',
   'Russo',
   'Sociologia',
-  'TECconcursos',
+  'TEC Concursos',
   'Teologia',
   'Vendas e Negociação',
   'Vibe Coding (IA)',
