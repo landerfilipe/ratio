@@ -93,7 +93,7 @@ export const FIXED_SUBJECTS = [
   'Psicologia',
   'Qconcursos',
   'Química',
-  'Redação',l
+  'Redação',
   'Russo',
   'Sociologia',
   'TECconcursos',
