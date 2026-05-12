@@ -934,32 +934,28 @@ export default function App() {
     };
 
     // Calculate Evolution Report (7, 14, 30, 90, 180, 360)
+    // "Meta" = daily goal × days; "Atual" = actual minutes in the period
     const evolutionPeriods = [7, 14, 30, 90, 180, 360];
     const evolutionReport = evolutionPeriods.map((days) => {
       const endCurrent = new Date(todayStart);
       const startCurrent = new Date(todayStart);
       startCurrent.setDate(startCurrent.getDate() - days + 1);
 
-      const endPrev = new Date(startCurrent);
-      endPrev.setDate(endPrev.getDate() - 1);
-      const startPrev = new Date(endPrev);
-      startPrev.setDate(startPrev.getDate() - days + 1);
-
       const currentMins = calcMinutesInPeriod(startCurrent, endCurrent);
-      const prevMins = calcMinutesInPeriod(startPrev, endPrev);
+      const metaMins = REFERENCE_MINUTES_PER_DAY * days;
 
       let percent: number | null = null;
-      if (prevMins > 0) {
-        percent = Math.round(((currentMins - prevMins) / prevMins) * 100);
+      if (metaMins > 0) {
+        percent = Math.round(((currentMins - metaMins) / metaMins) * 100);
       }
 
       return {
         days,
         label: `${days}d`,
         current: formatDurationDetailed(currentMins),
-        prev: formatDurationDetailed(prevMins),
+        prev: formatDurationDetailed(metaMins),
         currentRaw: currentMins,
-        prevRaw: prevMins,
+        prevRaw: metaMins,
         percent,
         trend: percent !== null ? (percent >= 0 ? 'up' : 'down') : 'neutral',
       };
@@ -1023,7 +1019,7 @@ export default function App() {
     const comparativeData = evolutionReport.map((item) => ({
       name: item.label,
       Atual: item.currentRaw,
-      Anterior: item.prevRaw,
+      Meta: item.prevRaw,
     }));
     // Removed filter to show axes even without data
 

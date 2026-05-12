@@ -64,7 +64,7 @@ interface HeatmapDataItem {
 interface ComparativeDataItem {
   name: string;
   Atual: number;
-  Anterior: number;
+  Meta: number;
 }
 
 interface DailyRhythmDataItem {
@@ -321,7 +321,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             <thead>
               <tr className={`border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'}`}>
                 <th className={`py-2 text-left font-bold ${THEME.textMuted}`}>Período</th>
-                <th className={`py-2 text-center font-bold ${THEME.textMuted}`}>Anterior</th>
+                <th className={`py-2 text-center font-bold ${THEME.textMuted}`}>Meta</th>
                 <th className={`py-2 text-center font-bold ${THEME.textMuted}`}>Atual</th>
                 <th className={`py-2 text-right font-bold ${THEME.textMuted}`}>Δ%</th>
               </tr>
@@ -386,7 +386,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                 itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
                 labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
               />
-              <Bar dataKey='Anterior' fill={isDarkMode ? '#525252' : '#cbd5e1'} radius={[4, 4, 0, 0]} />
+              <Bar dataKey='Meta' fill={isDarkMode ? '#525252' : '#cbd5e1'} radius={[4, 4, 0, 0]} />
               <Bar dataKey='Atual' fill='url(#chartGradient)' radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
