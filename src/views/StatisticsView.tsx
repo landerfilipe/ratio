@@ -232,6 +232,31 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   const CustomYAxisTick = createCustomYAxisTick(isDarkMode);
   const CustomRadarTick = createCustomRadarTick(isDarkMode);
 
+  // Gradient color for evolution percentages
+  // ≤-25%: red | -25% to -10%: red→yellow (orange) | -10% to +10%: yellow | +10% to +25%: yellow→green | ≥+25%: green
+  const getEvolutionColor = (percent: number | null): string => {
+    if (percent === null) return isDarkMode ? '#a3a3a3' : '#64748b';
+    const red    = { r: 239, g: 68,  b: 68  }; // #ef4444 (red-500)
+    const yellow = { r: 234, g: 179, b: 8   }; // #EAB308
+    const green  = { r: 34,  g: 197, b: 94  }; // #22c55e (green-500)
+    const p = Math.max(-25, Math.min(25, percent));
+    let r: number, g: number, b: number;
+    if (p <= -10) {
+      const t = (p + 25) / 15; // 0 at -25, 1 at -10
+      r = Math.round(red.r + (yellow.r - red.r) * t);
+      g = Math.round(red.g + (yellow.g - red.g) * t);
+      b = Math.round(red.b + (yellow.b - red.b) * t);
+    } else if (p <= 10) {
+      r = yellow.r; g = yellow.g; b = yellow.b;
+    } else {
+      const t = (p - 10) / 15; // 0 at +10, 1 at +25
+      r = Math.round(yellow.r + (green.r - yellow.r) * t);
+      g = Math.round(yellow.g + (green.g - yellow.g) * t);
+      b = Math.round(yellow.b + (green.b - yellow.b) * t);
+    }
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
   const renderPieLegend = () => (
     <ul
       className={`flex flex-wrap justify-center gap-2 mt-4 text-xs ${THEME.textMuted}`}
@@ -337,9 +362,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                     </span>
                   </td>
                   <td
-                    className={`py-2.5 text-right font-bold flex items-center justify-end gap-1 ${
-                      row.trend === 'up' ? 'text-green-500' : row.trend === 'down' ? 'text-red-500' : THEME.textMuted
-                    }`}
+                    className='py-2.5 text-right font-bold flex items-center justify-end gap-1'
+                    style={{ color: getEvolutionColor(row.percent) }}
                   >
                     {row.percent === null ? 'N/A' : `${row.percent > 0 ? '+' : ''}${row.percent}%`}
                   </td>
