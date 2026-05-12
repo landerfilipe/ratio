@@ -357,7 +357,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
                   <td className={`py-2.5 text-center ${THEME.textMuted}`}>{row.prev}</td>
                   <td className='py-2.5 text-center'>
-                    <span className='font-bold bg-gradient-to-br from-[#FDE047] to-[#EAB308] bg-clip-text text-transparent'>
+                    <span className='font-bold' style={{ color: isDarkMode ? '#d4d4d4' : '#475569' }}>
                       {row.current}
                     </span>
                   </td>
