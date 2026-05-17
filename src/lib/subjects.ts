@@ -2,12 +2,12 @@
 export const FIXED_SUBJECTS = [
   'Administração',
   'Ciência',
-  'Concursos'
+  'Concursos',
   'Economia',
-  'ENEM e Vestibulares'
+  'ENEM e Vestibulares',
   'Engenharia',
-  'Estatística'
-  'Português'
+  'Estatística',
+  'Português',
   'Lógica',
   'Matemática',
   'Psicologia',
