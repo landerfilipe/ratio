@@ -1,7 +1,7 @@
 // --- Lista Fixa de Disciplinas ---
 export const FIXED_SUBJECTS = [
   'Administração',
-  'Ciência',
+  'Ciências',
   'Concursos',
   'Economia',
   'ENEM e Vestibulares',
