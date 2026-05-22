@@ -963,7 +963,12 @@ export default function App() {
     }
 
     const pieAllData = aggregatedData;
-    const radarData = aggregatedData;
+    const radarClockwiseRankOrder = [1, 5, 9, 4, 8, 12, 2, 6, 10, 3, 7, 11];
+    const radarData = radarClockwiseRankOrder
+      .map((rank) => chartSortedData[rank - 1])
+      .filter((item): item is (typeof chartSortedData)[number] =>
+        Boolean(item)
+      );
     const barChartData = aggregatedData;
     const pieLegendData = aggregatedData;
 
