@@ -23,6 +23,7 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import {
   Clock,
@@ -155,9 +156,11 @@ export default function App() {
   >(null);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editSubjectInput, setEditSubjectInput] = useState('');
+  const [editOriginalSubject, setEditOriginalSubject] = useState('');
   const [editDuration, setEditDuration] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
+  const [applySubjectToAll, setApplySubjectToAll] = useState(false);
 
   // PWA Install State
   // Tipagem estrita para PWA install prompt (economiza debugging e evita erros de runtime)
@@ -603,9 +606,11 @@ export default function App() {
     (session: StudySession) => {
       setEditingSessionId(session.id);
       setEditSubjectInput(session.subject);
+      setEditOriginalSubject(session.subject);
       setEditDuration(session.durationMinutes.toString());
       setEditDate(toLocalDateTimeInputValue(session.date));
       setEditError(null);
+      setApplySubjectToAll(false);
       setDeleteConfirmationId(null);
       triggerHaptic();
     },
@@ -615,9 +620,11 @@ export default function App() {
   const handleCancelEditSession = useCallback(() => {
     setEditingSessionId(null);
     setEditSubjectInput('');
+    setEditOriginalSubject('');
     setEditDuration('');
     setEditDate('');
     setEditError(null);
+    setApplySubjectToAll(false);
     triggerHaptic();
   }, []);
 
@@ -659,25 +666,72 @@ export default function App() {
 
       triggerHaptic();
       try {
-        await updateDoc(
-          doc(db, 'artifacts', appId, 'users', user.uid, 'study_sessions', id),
-          {
+        const sessionRef = doc(
+          db,
+          'artifacts',
+          appId,
+          'users',
+          user.uid,
+          'study_sessions',
+          id
+        );
+
+        if (applySubjectToAll && editOriginalSubject !== exactMatch) {
+          const batch = writeBatch(db);
+          const matchingSessions = sessions.filter(
+            (session) => session.subject === editOriginalSubject
+          );
+
+          matchingSessions.forEach((session) => {
+            const targetRef = doc(
+              db,
+              'artifacts',
+              appId,
+              'users',
+              user.uid,
+              'study_sessions',
+              session.id
+            );
+            batch.update(targetRef, { subject: exactMatch });
+          });
+
+          batch.update(sessionRef, {
             subject: exactMatch,
             durationMinutes: minutes,
             date: d.toISOString(),
             timestamp: d.getTime(),
-          }
-        );
+          });
+
+          await batch.commit();
+        } else {
+          await updateDoc(sessionRef, {
+            subject: exactMatch,
+            durationMinutes: minutes,
+            date: d.toISOString(),
+            timestamp: d.getTime(),
+          });
+        }
+
         setEditingSessionId(null);
         setEditSubjectInput('');
+        setEditOriginalSubject('');
         setEditDuration('');
         setEditDate('');
+        setApplySubjectToAll(false);
       } catch (error) {
         console.error(error);
         setEditError('Erro ao salvar alterações.');
       }
     },
-    [user, editSubjectInput, editDuration, editDate]
+    [
+      user,
+      editSubjectInput,
+      editOriginalSubject,
+      editDuration,
+      editDate,
+      applySubjectToAll,
+      sessions,
+    ]
   );
 
   const handleSaveProfile = useCallback(
@@ -2502,6 +2556,29 @@ export default function App() {
                             <option key={subject} value={subject} />
                           ))}
                         </datalist>
+                        <label
+                          className={`flex items-start gap-2 rounded-xl border p-3 text-xs font-bold cursor-pointer ${
+                            isDarkMode
+                              ? 'border-neutral-800 bg-neutral-900/60 text-neutral-300'
+                              : 'border-slate-200 bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <input
+                            type='checkbox'
+                            checked={applySubjectToAll}
+                            onChange={(e) =>
+                              setApplySubjectToAll(e.target.checked)
+                            }
+                            disabled={editOriginalSubject === editSubjectInput}
+                            className='mt-0.5 accent-[#EAB308]'
+                          />
+                          <span>
+                            Aplicar troca de disciplina a todas as sessões de{' '}
+                            <span className='text-[#EAB308]'>
+                              {editOriginalSubject}
+                            </span>
+                          </span>
+                        </label>
                         {editError && (
                           <div className='text-xs text-red-500 flex items-center gap-1 font-bold'>
                             <AlertCircle className='h-3 w-3' />
