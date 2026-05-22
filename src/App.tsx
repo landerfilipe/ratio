@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {
   signInWithPopup,
+  linkWithPopup,
   GoogleAuthProvider,
   signInAnonymously,
   onAuthStateChanged,
@@ -21,6 +22,7 @@ import {
   deleteDoc,
   setDoc,
   getDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import {
   Clock,
@@ -28,32 +30,23 @@ import {
   TrendingUp,
   Plus,
   LogOut,
-  BarChart3,
-  ChartColumn,
   History,
   CheckCircle2,
   Calendar as CalendarIcon,
-  PieChart as PieChartIcon,
-  Clipboard,
   ArrowDown,
   ArrowUp,
   Search,
   AlertCircle,
   Home,
   Activity,
-  LineChart as LineChartIcon,
   ChevronLeft,
   ChevronRight,
   User as UserIcon,
   MapPin,
-  Camera,
   Save,
-  Hexagon,
   Trophy,
   Moon,
   Sun,
-  ArrowDownWideNarrow,
-  ArrowUpWideNarrow,
   Edit2,
   X,
   Check,
@@ -90,7 +83,6 @@ import { FIXED_SUBJECTS } from './lib/subjects';
 import {
   formatDurationDetailed,
   formatGoalDuration,
-  formatAxisTick,
   formatTimeComponents,
   normalizeString,
   triggerHaptic,
@@ -98,8 +90,6 @@ import {
   getDaysFromRange,
 } from './lib/helpers';
 import {
-  COLORS,
-  getHeatmapColors,
   TEXT_GRADIENT,
   ICON_SOLID_COLOR,
   ICON_SOLID_STYLE,
@@ -114,7 +104,6 @@ import type {
   ViewState,
   TimerMode,
   BeforeInstallPromptEvent,
-  CustomTickProps,
   User,
 } from './types';
 import { LoginSkeleton } from './components/Skeletons';
@@ -164,6 +153,11 @@ export default function App() {
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<
     string | null
   >(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editSubjectInput, setEditSubjectInput] = useState('');
+  const [editDuration, setEditDuration] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
 
   // PWA Install State
   // Tipagem estrita para PWA install prompt (economiza debugging e evita erros de runtime)
@@ -205,6 +199,13 @@ export default function App() {
     const offset = now.getTimezoneOffset();
     const localDate = new Date(now.getTime() - offset * 60 * 1000);
     setSelectedDate(localDate.toISOString().slice(0, 16));
+  }, []);
+
+  const toLocalDateTimeInputValue = useCallback((dateValue: string | Date) => {
+    const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().slice(0, 16);
   }, []);
 
   // PWA Install Listener - Tipagem estrita para evitar `any`
@@ -371,7 +372,11 @@ export default function App() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
-          setProfile((prev) => ({ ...prev, ...data }));
+          setProfile((prev) => ({
+            ...prev,
+            ...data,
+            photoUrl: user.photoURL || '',
+          }));
           if (data.dailyGoalMinutes)
             setTempGoal(data.dailyGoalMinutes.toString());
         } else {
@@ -406,8 +411,39 @@ export default function App() {
 
   const handleGoogleLogin = useCallback(async () => {
     triggerHaptic();
+    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const currentUser = auth.currentUser;
+      if (currentUser?.isAnonymous) {
+        try {
+          await linkWithPopup(currentUser, provider);
+          return;
+        } catch (e: unknown) {
+          const firebaseError = e as { code?: string; message?: string };
+          const accountAlreadyExists =
+            firebaseError.code === 'auth/credential-already-in-use' ||
+            firebaseError.code === 'auth/email-already-in-use';
+
+          if (accountAlreadyExists && sessions.length > 0) {
+            setAuthError(
+              'Essa conta Google já existe. Para não perder os estudos anônimos deste aparelho, migre esses dados antes de trocar de conta.'
+            );
+            return;
+          }
+
+          if (
+            accountAlreadyExists ||
+            firebaseError.code === 'auth/provider-already-linked'
+          ) {
+            await signInWithPopup(auth, provider);
+            return;
+          }
+
+          throw e;
+        }
+      }
+
+      await signInWithPopup(auth, provider);
     } catch (e: unknown) {
       console.error('Erro no Google Login:', e);
       const firebaseError = e as { code?: string; message?: string };
@@ -417,7 +453,7 @@ export default function App() {
         );
       }
     }
-  }, []);
+  }, [sessions.length]);
 
   const handleLogout = useCallback(() => {
     triggerHaptic();
@@ -563,6 +599,87 @@ export default function App() {
     [user]
   );
 
+  const handleStartEditSession = useCallback(
+    (session: StudySession) => {
+      setEditingSessionId(session.id);
+      setEditSubjectInput(session.subject);
+      setEditDuration(session.durationMinutes.toString());
+      setEditDate(toLocalDateTimeInputValue(session.date));
+      setEditError(null);
+      setDeleteConfirmationId(null);
+      triggerHaptic();
+    },
+    [toLocalDateTimeInputValue]
+  );
+
+  const handleCancelEditSession = useCallback(() => {
+    setEditingSessionId(null);
+    setEditSubjectInput('');
+    setEditDuration('');
+    setEditDate('');
+    setEditError(null);
+    triggerHaptic();
+  }, []);
+
+  const handleSaveEditedSession = useCallback(
+    async (id: string) => {
+      setEditError(null);
+      if (!user) return;
+
+      const cleanInput = normalizeString(editSubjectInput);
+      const exactMatch = FIXED_SUBJECTS.find(
+        (s) => normalizeString(s) === cleanInput
+      );
+      if (!exactMatch) {
+        setEditError('Disciplina não encontrada.');
+        return;
+      }
+
+      const minutes = parseInt(editDuration, 10);
+      if (!Number.isFinite(minutes) || minutes <= 0) {
+        setEditError('Informe uma duração válida.');
+        return;
+      }
+
+      if (!editDate) {
+        setEditError('Informe uma data válida.');
+        return;
+      }
+
+      const d = new Date(editDate);
+      if (Number.isNaN(d.getTime())) {
+        setEditError('Informe uma data válida.');
+        return;
+      }
+
+      if (d.getTime() > Date.now()) {
+        setEditError('Não é possível lançar estudos em datas futuras.');
+        return;
+      }
+
+      triggerHaptic();
+      try {
+        await updateDoc(
+          doc(db, 'artifacts', appId, 'users', user.uid, 'study_sessions', id),
+          {
+            subject: exactMatch,
+            durationMinutes: minutes,
+            date: d.toISOString(),
+            timestamp: d.getTime(),
+          }
+        );
+        setEditingSessionId(null);
+        setEditSubjectInput('');
+        setEditDuration('');
+        setEditDate('');
+      } catch (error) {
+        console.error(error);
+        setEditError('Erro ao salvar alterações.');
+      }
+    },
+    [user, editSubjectInput, editDuration, editDate]
+  );
+
   const handleSaveProfile = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -572,7 +689,7 @@ export default function App() {
       try {
         await setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'),
-          profile
+          { ...profile, photoUrl: user.photoURL || '' }
         );
       } catch (error) {
         console.error(error);
@@ -581,24 +698,6 @@ export default function App() {
       }
     },
     [user, profile]
-  );
-
-  // UPLOAD DE FOTO (Base64) - Versão Arquivo
-  const handlePhotoUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setProfile((prev) => ({
-            ...prev,
-            photoUrl: reader.result as string,
-          }));
-        };
-        reader.readAsDataURL(file);
-      }
-    },
-    []
   );
 
   const handleUpdateGoal = useCallback(async () => {
@@ -610,7 +709,7 @@ export default function App() {
     try {
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'),
-        updatedProfile
+        { ...updatedProfile, photoUrl: user.photoURL || '' }
       );
     } catch (error) {
       console.error(error);
@@ -715,13 +814,70 @@ export default function App() {
       (acc, curr) => acc + curr.durationMinutes,
       0
     );
+    const selectedRangeDays = getDaysFromRange(timeRange);
+    const avgMinutesPerSelectedDay =
+      selectedRangeDays > 0 ? Math.round(rangeMinutes / selectedRangeDays) : 0;
+
+    const sessionMap = new Map<string, number>();
+    sessions.forEach((s) => {
+      const dateObj = new Date(s.date);
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const d = `${y}-${m}-${day}`;
+      sessionMap.set(d, (sessionMap.get(d) || 0) + s.durationMinutes);
+    });
+
+    const REFERENCE_MINUTES_PER_DAY = profile.dailyGoalMinutes || 180;
+    const currentGoalMinutes = REFERENCE_MINUTES_PER_DAY * selectedRangeDays;
+    const goalPercentage =
+      currentGoalMinutes > 0
+        ? Math.round((rangeMinutes / currentGoalMinutes) * 100)
+        : 0;
+    const goalDeviation =
+      currentGoalMinutes > 0
+        ? Math.round(
+            ((rangeMinutes - currentGoalMinutes) / currentGoalMinutes) * 100
+          )
+        : 0;
+
+    if (view !== 'statistics') {
+      return {
+        totalMinutes,
+        avgMinutesPerDay,
+        rangeMinutes,
+        avgMinutesPerSelectedDay,
+        listData: [],
+        todayMinutes,
+        pieAllData: [],
+        pieLegendData: [],
+        barChartData: [],
+        radarData: [],
+        heatmapData: [],
+        lineChartData: [],
+        comparativeData: [],
+        dailyRhythmData: [],
+        currentPeriodMinutes: rangeMinutes,
+        growthPercent: 0,
+        sessionMap,
+        getDaysInMonth,
+        getFirstDayOfMonth,
+        currentGoalMinutes,
+        filteredCount: filteredSessions.length,
+        evolutionReport: [],
+        goalPercentage,
+        goalDeviation,
+        rhythmDeviationPercent: 0,
+        accumulatedDeviationPercent: 0,
+      };
+    }
 
     const bySubject: Record<string, number> = {};
     sessions.forEach(
       (s) =>
         (bySubject[s.subject] = (bySubject[s.subject] || 0) + s.durationMinutes)
     );
-    let rawData = Object.entries(bySubject).map(([name, value]) => ({
+    const rawData = Object.entries(bySubject).map(([name, value]) => ({
       name,
       value,
       percentage:
@@ -756,8 +912,6 @@ export default function App() {
     const radarData = aggregatedData;
     const barChartData = aggregatedData;
     const pieLegendData = aggregatedData;
-
-    const REFERENCE_MINUTES_PER_DAY = profile.dailyGoalMinutes || 180;
 
     // Line Chart
     const lineChartData: {
@@ -815,15 +969,6 @@ export default function App() {
       level: number;
       isGoalMet: boolean;
     }[] = [];
-    const sessionMap = new Map<string, number>();
-    sessions.forEach((s) => {
-      const dateObj = new Date(s.date);
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const d = `${y}-${m}-${day}`;
-      sessionMap.set(d, (sessionMap.get(d) || 0) + s.durationMinutes);
-    });
 
     const startOfYear = new Date(heatmapYear, 0, 1);
     const endOfYear = new Date(heatmapYear, 11, 31);
@@ -961,10 +1106,6 @@ export default function App() {
       };
     });
 
-    let currentGoalMinutes = REFERENCE_MINUTES_PER_DAY;
-    const daysSelected = getDaysFromRange(timeRange);
-    currentGoalMinutes = REFERENCE_MINUTES_PER_DAY * daysSelected;
-
     // Main header comparison
     const compDays = timeRange === 'day' ? 1 : getDaysFromRange(timeRange);
     const rangeEnd = new Date(todayStart);
@@ -986,19 +1127,6 @@ export default function App() {
         ((currentPeriodMinutes - prevPeriodMinutes) / prevPeriodMinutes) * 100
       );
     else if (currentPeriodMinutes > 0) growthPercent = 100;
-
-    const goalPercentage =
-      currentGoalMinutes > 0
-        ? Math.round((rangeMinutes / currentGoalMinutes) * 100)
-        : 0;
-
-    // Deviation Logic for Goal Bar (Symbols and Arrows)
-    const goalDeviation =
-      currentGoalMinutes > 0
-        ? Math.round(
-            ((rangeMinutes - currentGoalMinutes) / currentGoalMinutes) * 100
-          )
-        : 0;
 
     // Deviation for Accumulated Line Chart
     const totalReference =
@@ -1027,6 +1155,7 @@ export default function App() {
       totalMinutes,
       avgMinutesPerDay,
       rangeMinutes,
+      avgMinutesPerSelectedDay,
       listData: rawData,
       todayMinutes,
       pieAllData,
@@ -1052,6 +1181,7 @@ export default function App() {
     };
   }, [
     sessions,
+    view,
     timeRange,
     lineChartRange,
     dailyRhythmRange,
@@ -1062,103 +1192,6 @@ export default function App() {
 
   // --- Theme Colors (imported from lib/theme.ts) ---
   const THEME = getThemeClasses(isDarkMode);
-  const HEATMAP_COLORS = getHeatmapColors(isDarkMode);
-
-  // Tipagem estrita para Recharts custom tick (remove `any`)
-  const CustomYAxisTick = ({ x = 0, y = 0, payload }: CustomTickProps) => {
-    const text = String(payload?.value ?? '');
-    const words = text.split(' ');
-    const lines = [];
-    let currentLine = words[0];
-    for (let i = 1; i < words.length; i++) {
-      if (currentLine.length + words[i].length < 18) {
-        currentLine += ' ' + words[i];
-      } else {
-        lines.push(currentLine);
-        currentLine = words[i];
-      }
-    }
-    lines.push(currentLine);
-    return (
-      <g transform={`translate(${x},${y})`}>
-        {lines.map((line, index) => (
-          <text
-            key={index}
-            x={-5}
-            y={index * 10 - (lines.length - 1) * 5}
-            dy={3}
-            textAnchor='end'
-            fill={isDarkMode ? '#a3a3a3' : '#64748b'}
-            fontSize={10}
-          >
-            {line}
-          </text>
-        ))}
-      </g>
-    );
-  };
-
-  // Tipagem estrita para Recharts radar tick (remove `any`)
-  const CustomRadarTick = ({
-    payload,
-    x = 0,
-    y = 0,
-    textAnchor,
-  }: CustomTickProps) => {
-    const text = String(payload?.value ?? '');
-    const words = text.split(' ');
-    const lines = [];
-    let currentLine = words[0];
-    for (let i = 1; i < words.length; i++) {
-      if (currentLine.length + words[i].length < 15) {
-        currentLine += ' ' + words[i];
-      } else {
-        lines.push(currentLine);
-        currentLine = words[i];
-      }
-    }
-    lines.push(currentLine);
-
-    return (
-      <g transform={`translate(${x},${y})`}>
-        {lines.map((line, index) => (
-          <text
-            key={index}
-            x={0}
-            y={index * 10}
-            dy={0}
-            textAnchor={textAnchor}
-            fill={isDarkMode ? '#e5e5e5' : '#334155'}
-            fontSize={9}
-            fontWeight={500}
-          >
-            {line}
-          </text>
-        ))}
-      </g>
-    );
-  };
-
-  const renderPieLegend = () => (
-    <ul
-      className={`flex flex-wrap justify-center gap-2 mt-4 text-xs ${THEME.textMuted}`}
-    >
-      {stats.pieLegendData.map((entry, index) => (
-        <li key={index} className='flex items-center gap-1'>
-          <span
-            className='w-3 h-3 rounded-sm'
-            style={{
-              backgroundColor:
-                entry.name === 'Outras Matérias'
-                  ? '#525252'
-                  : COLORS[index % COLORS.length],
-            }}
-          ></span>
-          <span className='truncate max-w-[100px]'>{entry.name}</span>
-        </li>
-      ))}
-    </ul>
-  );
 
   const renderCalendar = () => {
     const year = currentMonth.getFullYear();
@@ -1261,7 +1294,6 @@ export default function App() {
         }`}
         style={{ fontFamily: "'Urbanist', sans-serif" }}
       >
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap');`}</style>
         {/* SVG Definition for Login Screen */}
         <svg width='0' height='0' className='absolute block'>
           <defs>
@@ -1342,7 +1374,6 @@ export default function App() {
       style={{ fontFamily: "'Urbanist', sans-serif" }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap');
         /* Hide scrollbar for Chrome, Safari and Opera */
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -1619,27 +1650,40 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
+                  {timeRange === 'day' ? (
+                    <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
+                  ) : (
+                    <TrendingUp
+                      className='h-4 w-4'
+                      style={ICON_SOLID_STYLE}
+                    />
+                  )}
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
-                    {getRangeLabel(timeRange)}
+                    {timeRange === 'day' ? getRangeLabel(timeRange) : 'Média'}
                   </span>
                 </div>
                 {/* Animação sutil no número principal */}
                 <div
                   className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 ${THEME.text}`}
                 >
-                  {formatDurationDetailed(stats.rangeMinutes)}
+                  {formatDurationDetailed(
+                    timeRange === 'day'
+                      ? stats.rangeMinutes
+                      : stats.avgMinutesPerSelectedDay
+                  )}
                 </div>
                 {/* Period Card Logic SWAPPED: Now has ONLY Percentage + Color (No arrows/symbols) */}
-                <div
-                  className={`absolute top-4 right-4 text-xs font-bold ${
-                    stats.goalPercentage >= 100
-                      ? 'text-green-500'
-                      : 'text-red-500'
-                  }`}
-                >
-                  {stats.goalPercentage}%
-                </div>
+                {timeRange === 'day' && (
+                  <div
+                    className={`absolute top-4 right-4 text-xs font-bold ${
+                      stats.goalPercentage >= 100
+                        ? 'text-green-500'
+                        : 'text-red-500'
+                    }`}
+                  >
+                    {stats.goalPercentage}%
+                  </div>
+                )}
               </div>
               <div
                 className={`${THEME.card} p-5 rounded-2xl border shadow-sm relative overflow-hidden`}
@@ -1647,7 +1691,14 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  <TrendingUp className='h-4 w-4' style={ICON_SOLID_STYLE} />
+                  {timeRange === 'day' ? (
+                    <TrendingUp
+                      className='h-4 w-4'
+                      style={ICON_SOLID_STYLE}
+                    />
+                  ) : (
+                    <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
+                  )}
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
                     Total
                   </span>
@@ -1656,8 +1707,23 @@ export default function App() {
                 <div
                   className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100 ${THEME.text}`}
                 >
-                  {formatDurationDetailed(stats.totalMinutes)}
+                  {formatDurationDetailed(
+                    timeRange === 'day'
+                      ? stats.totalMinutes
+                      : stats.rangeMinutes
+                  )}
                 </div>
+                {timeRange !== 'day' && (
+                  <div
+                    className={`absolute top-4 right-4 text-xs font-bold ${
+                      stats.goalPercentage >= 100
+                        ? 'text-green-500'
+                        : 'text-red-500'
+                    }`}
+                  >
+                    {stats.goalPercentage}%
+                  </div>
+                )}
               </div>
               <div
                 className={`hidden md:block ${THEME.card} p-5 rounded-2xl border shadow-sm`}
@@ -2191,8 +2257,6 @@ export default function App() {
               THEME={THEME}
               heatmapYear={heatmapYear}
               setHeatmapYear={setHeatmapYear}
-              timeRange={timeRange}
-              setTimeRange={setTimeRange}
               lineChartRange={lineChartRange}
               setLineChartRange={setLineChartRange}
               dailyRhythmRange={dailyRhythmRange}
@@ -2375,66 +2439,172 @@ export default function App() {
                 {sessions.map((session) => (
                   <div
                     key={session.id}
-                    className={`p-4 flex items-center justify-between transition group ${
+                    className={`p-4 transition group ${
                       isDarkMode ? 'hover:bg-neutral-900' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <div className='flex-1 min-w-0 pr-4'>
-                      <h3
-                        className={`font-bold text-base break-words leading-tight ${TEXT_GRADIENT}`}
-                      >
-                        {session.subject}
-                      </h3>
-                      <p
-                        className={`text-xs ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
-                      >
-                        <History className='h-3 w-3' />{' '}
-                        {new Date(session.date).toLocaleDateString('pt-BR')}{' '}
-                        <span className='mx-1'>•</span>{' '}
-                        {new Date(session.date).toLocaleTimeString('pt-BR', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                    <div className='flex items-center gap-3'>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${
-                          isDarkMode
-                            ? 'bg-neutral-800 text-white'
-                            : 'bg-white border text-slate-600'
-                        }`}
-                      >
-                        {formatDurationDetailed(session.durationMinutes)}
-                      </span>
-                      {deleteConfirmationId === session.id ? (
-                        <div className='flex items-center gap-2'>
+                    {editingSessionId === session.id ? (
+                      <div className='space-y-3'>
+                        <div className='grid grid-cols-1 md:grid-cols-5 gap-3'>
+                          <div className='md:col-span-2'>
+                            <label
+                              className={`block text-[10px] font-bold uppercase mb-1 ${THEME.textMuted}`}
+                            >
+                              Disciplina
+                            </label>
+                            <input
+                              type='text'
+                              list='edit-subjects'
+                              value={editSubjectInput}
+                              onChange={(e) => {
+                                setEditSubjectInput(e.target.value);
+                                setEditError(null);
+                              }}
+                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                            />
+                          </div>
+                          <div className='md:col-span-2'>
+                            <label
+                              className={`block text-[10px] font-bold uppercase mb-1 ${THEME.textMuted}`}
+                            >
+                              Data
+                            </label>
+                            <input
+                              type='datetime-local'
+                              value={editDate}
+                              onChange={(e) => {
+                                setEditDate(e.target.value);
+                                setEditError(null);
+                              }}
+                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              className={`block text-[10px] font-bold uppercase mb-1 ${THEME.textMuted}`}
+                            >
+                              Minutos
+                            </label>
+                            <input
+                              type='number'
+                              min='1'
+                              value={editDuration}
+                              onChange={(e) => {
+                                setEditDuration(e.target.value);
+                                setEditError(null);
+                              }}
+                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                            />
+                          </div>
+                        </div>
+                        <datalist id='edit-subjects'>
+                          {FIXED_SUBJECTS.map((subject) => (
+                            <option key={subject} value={subject} />
+                          ))}
+                        </datalist>
+                        {editError && (
+                          <div className='text-xs text-red-500 flex items-center gap-1 font-bold'>
+                            <AlertCircle className='h-3 w-3' />
+                            {editError}
+                          </div>
+                        )}
+                        <div className='flex justify-end gap-2'>
                           <button
-                            onClick={() => handleDeleteSession(session.id)}
-                            className='text-red-500 font-bold text-xs hover:underline'
+                            onClick={handleCancelEditSession}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold border ${
+                              isDarkMode
+                                ? 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
                           >
-                            Sim
+                            Cancelar
                           </button>
                           <button
-                            onClick={() => setDeleteConfirmationId(null)}
-                            className={`${THEME.textMuted} font-bold text-xs hover:underline`}
+                            onClick={() => handleSaveEditedSession(session.id)}
+                            className='px-3 py-2 rounded-lg text-xs font-bold bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black'
                           >
-                            Não
+                            Salvar
                           </button>
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirmationId(session.id)}
-                          className={`text-neutral-500 hover:text-red-500 transition p-2 rounded-full ${
-                            isDarkMode
-                              ? 'hover:bg-neutral-800'
-                              : 'hover:bg-red-50'
-                          }`}
-                        >
-                          <Trash2 className='h-4 w-4' />
-                        </button>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className='flex items-center justify-between'>
+                        <div className='flex-1 min-w-0 pr-4'>
+                          <h3
+                            className={`font-bold text-base break-words leading-tight ${TEXT_GRADIENT}`}
+                          >
+                            {session.subject}
+                          </h3>
+                          <p
+                            className={`text-xs ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                          >
+                            <History className='h-3 w-3' />{' '}
+                            {new Date(session.date).toLocaleDateString(
+                              'pt-BR'
+                            )}{' '}
+                            <span className='mx-1'>•</span>{' '}
+                            {new Date(session.date).toLocaleTimeString(
+                              'pt-BR',
+                              {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
+                            )}
+                          </p>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${
+                              isDarkMode
+                                ? 'bg-neutral-800 text-white'
+                                : 'bg-white border text-slate-600'
+                            }`}
+                          >
+                            {formatDurationDetailed(session.durationMinutes)}
+                          </span>
+                          <button
+                            onClick={() => handleStartEditSession(session)}
+                            aria-label='Editar sessão'
+                            className={`text-neutral-500 hover:text-[#EAB308] transition p-2 rounded-full ${
+                              isDarkMode
+                                ? 'hover:bg-neutral-800'
+                                : 'hover:bg-yellow-50'
+                            }`}
+                          >
+                            <Edit2 className='h-4 w-4' />
+                          </button>
+                          {deleteConfirmationId === session.id ? (
+                            <div className='flex items-center gap-2'>
+                              <button
+                                onClick={() => handleDeleteSession(session.id)}
+                                className='text-red-500 font-bold text-xs hover:underline'
+                              >
+                                Sim
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmationId(null)}
+                                className={`${THEME.textMuted} font-bold text-xs hover:underline`}
+                              >
+                                Não
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                setDeleteConfirmationId(session.id)
+                              }
+                              className={`text-neutral-500 hover:text-red-500 transition p-2 rounded-full ${
+                                isDarkMode
+                                  ? 'hover:bg-neutral-800'
+                                  : 'hover:bg-red-50'
+                              }`}
+                            >
+                              <Trash2 className='h-4 w-4' />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2601,16 +2771,12 @@ export default function App() {
                   >
                     Foto de Perfil
                   </label>
-                  <div className='relative'>
-                    <input
-                      type='file'
-                      accept='image/*'
-                      onChange={handlePhotoUpload}
-                      className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium focus:border-[#EAB308] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#FDE047] file:text-black hover:file:bg-[#EAB308] transition-all ${THEME.input}`}
-                    />
-                    <Camera
-                      className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${THEME.textMuted}`}
-                    />
+                  <div
+                    className={`w-full rounded-xl border p-4 text-sm font-medium ${THEME.input}`}
+                  >
+                    {user?.photoURL
+                      ? 'Usando a foto da sua conta Google.'
+                      : 'Entre com Google para usar uma foto de perfil.'}
                   </div>
                 </div>
                 <div>

@@ -2,16 +2,78 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regras de segurança reais - CADA USUÁRIO SÓ PODE ACESSAR SEUS PRÓPRIOS DADOS
-    // Isso economiza dinheiro evitando abusos e protege dados dos usuários
-    
-    match /artifacts/{appId}/users/{userId}/{document=**} {
-      // Permitir leitura/escrita APENAS se o usuário estiver autenticado
-      // E estiver acessando SEUS PRÓPRIOS dados (uid == userId)
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
-    
-    // Bloquear acesso a qualquer outro documento por padrão
+
+    function optionalString(data, field, maxLength) {
+      return !(field in data) ||
+        (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function optionalNumberInRange(data, field, minValue, maxValue) {
+      return !(field in data) ||
+        (data[field] is int &&
+          data[field] >= minValue &&
+          data[field] <= maxValue);
+    }
+
+    function isValidSession() {
+      return request.resource.data.keys().hasOnly([
+          'subject',
+          'durationMinutes',
+          'date',
+          'timestamp'
+        ]) &&
+        request.resource.data.subject is string &&
+        request.resource.data.subject.size() > 0 &&
+        request.resource.data.subject.size() <= 120 &&
+        request.resource.data.durationMinutes is int &&
+        request.resource.data.durationMinutes > 0 &&
+        request.resource.data.durationMinutes <= 1440 &&
+        request.resource.data.date is string &&
+        request.resource.data.date.size() >= 10 &&
+        request.resource.data.date.size() <= 40 &&
+        request.resource.data.timestamp is int &&
+        request.resource.data.timestamp > 0;
+    }
+
+    function isValidProfile() {
+      return request.resource.data.keys().hasOnly([
+          'name',
+          'surname',
+          'birthdate',
+          'location',
+          'bio',
+          'photoUrl',
+          'dailyGoalMinutes'
+        ]) &&
+        optionalString(request.resource.data, 'name', 80) &&
+        optionalString(request.resource.data, 'surname', 120) &&
+        optionalString(request.resource.data, 'birthdate', 20) &&
+        optionalString(request.resource.data, 'location', 120) &&
+        optionalString(request.resource.data, 'bio', 500) &&
+        optionalString(request.resource.data, 'photoUrl', 500) &&
+        optionalNumberInRange(
+          request.resource.data,
+          'dailyGoalMinutes',
+          1,
+          1440
+        );
+    }
+
+    match /artifacts/{appId}/users/{userId}/study_sessions/{sessionId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidSession();
+    }
+
+    match /artifacts/{appId}/users/{userId}/profile/{profileId} {
+      allow read, delete: if isOwner(userId) && profileId == 'main';
+      allow create, update: if isOwner(userId) &&
+        profileId == 'main' &&
+        isValidProfile();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

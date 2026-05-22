@@ -27,6 +27,6 @@ try {
       console.warn('Persistência não suportada neste navegador.');
     }
   });
-} catch (e) {
+} catch {
   console.log('Persistência já habilitada ou erro ao habilitar');
 }

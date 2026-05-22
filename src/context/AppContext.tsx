@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // --- App Context: Estado compartilhado entre views (Code Splitting) ---
 import React, {
   createContext,
@@ -11,6 +12,7 @@ import React, {
 import {
   onAuthStateChanged,
   signInWithPopup,
+  linkWithPopup,
   GoogleAuthProvider,
   signInAnonymously,
   signOut,
@@ -260,7 +262,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
-          setProfile((prev) => ({ ...prev, ...data }));
+          setProfile((prev) => ({
+            ...prev,
+            ...data,
+            photoUrl: user.photoURL || '',
+          }));
         } else {
           setProfile((prev) => ({
             ...prev,
@@ -342,8 +348,39 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const handleGoogleLogin = useCallback(async () => {
     triggerHaptic();
+    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const currentUser = auth.currentUser;
+      if (currentUser?.isAnonymous) {
+        try {
+          await linkWithPopup(currentUser, provider);
+          return;
+        } catch (e: unknown) {
+          const firebaseError = e as { code?: string; message?: string };
+          const accountAlreadyExists =
+            firebaseError.code === 'auth/credential-already-in-use' ||
+            firebaseError.code === 'auth/email-already-in-use';
+
+          if (accountAlreadyExists && sessions.length > 0) {
+            setAuthError(
+              'Essa conta Google já existe. Para não perder os estudos anônimos deste aparelho, migre esses dados antes de trocar de conta.'
+            );
+            return;
+          }
+
+          if (
+            accountAlreadyExists ||
+            firebaseError.code === 'auth/provider-already-linked'
+          ) {
+            await signInWithPopup(auth, provider);
+            return;
+          }
+
+          throw e;
+        }
+      }
+
+      await signInWithPopup(auth, provider);
     } catch (e: unknown) {
       console.error('Erro no Google Login:', e);
       const firebaseError = e as { code?: string; message?: string };
@@ -353,7 +390,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         );
       }
     }
-  }, []);
+  }, [sessions.length]);
 
   const handleLogout = useCallback(() => {
     triggerHaptic();
@@ -430,7 +467,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     try {
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'),
-        profile
+        { ...profile, photoUrl: user.photoURL || '' }
       );
     } catch (error) {
       console.error(error);
@@ -447,7 +484,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       try {
         await setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'),
-          updatedProfile
+          { ...updatedProfile, photoUrl: user.photoURL || '' }
         );
       } catch (error) {
         console.error(error);

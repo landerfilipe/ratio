@@ -32,7 +32,11 @@ export default defineConfig({
       },
       // Workbox config for better caching
       workbox: {
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Recharts is only needed in the statistics view; avoid competing with
+        // the first load on mobile by caching it only after the user opens it.
+        globIgnores: ['**/vendor-recharts-*.js'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

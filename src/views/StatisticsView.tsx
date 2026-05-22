@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 
 import { COLORS, getHeatmapColors, ICON_SOLID_STYLE } from '../lib/theme';
-import { formatDurationDetailed, formatAxisTick, triggerHaptic, getRangeLabel } from '../lib/helpers';
+import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/helpers';
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 
 // Tipos para os dados (espelhando App.tsx stats)
@@ -61,24 +61,6 @@ interface HeatmapDataItem {
   isGoalMet: boolean;
 }
 
-interface ComparativeDataItem {
-  name: string;
-  Atual: number;
-  Meta: number;
-}
-
-interface DailyRhythmDataItem {
-  date: string;
-  minutes: number;
-  ma: number;
-}
-
-interface LineChartDataItem {
-  date: string;
-  accumulated: number;
-  reference: number;
-}
-
 interface EvolutionReportItem {
   days: number;
   label: string;
@@ -88,21 +70,6 @@ interface EvolutionReportItem {
   prevRaw: number;
   percent: number | null;
   trend: 'up' | 'down' | 'neutral';
-}
-
-interface StatsData {
-  heatmapData: HeatmapDataItem[];
-  evolutionReport: EvolutionReportItem[];
-  comparativeData: ComparativeDataItem[];
-  dailyRhythmData: DailyRhythmDataItem[];
-  lineChartData: LineChartDataItem[];
-  pieAllData: ChartDataItem[];
-  pieLegendData: ChartDataItem[];
-  radarData: ChartDataItem[];
-  barChartData: ChartDataItem[];
-  listData: ChartDataItem[];
-  rhythmDeviationPercent: number;
-  accumulatedDeviationPercent: number;
 }
 
 interface ThemeClasses {
@@ -125,8 +92,6 @@ interface StatisticsViewProps {
   THEME: ThemeClasses;
   heatmapYear: number;
   setHeatmapYear: React.Dispatch<React.SetStateAction<number>>;
-  timeRange: TimeRange;
-  setTimeRange: React.Dispatch<React.SetStateAction<TimeRange>>;
   lineChartRange: TimeRange;
   setLineChartRange: React.Dispatch<React.SetStateAction<TimeRange>>;
   dailyRhythmRange: TimeRange;
@@ -216,8 +181,6 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   THEME,
   heatmapYear,
   setHeatmapYear,
-  timeRange,
-  setTimeRange,
   lineChartRange,
   setLineChartRange,
   dailyRhythmRange,
