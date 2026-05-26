@@ -1274,11 +1274,13 @@ export default function App() {
 
     // Data for the NEW Comparative Bar Chart (replacing day of week)
     // Structure: [ {name: '7d', prev: X, current: Y}, ... ]
-    const comparativeData = evolutionReport.map((item) => ({
-      name: item.label,
-      Atual: item.currentRaw,
-      Meta: item.prevRaw,
-    }));
+    const comparativeData = evolutionReport
+      .filter((item) => item.days !== 1)
+      .map((item) => ({
+        name: item.label,
+        Atual: item.currentRaw,
+        Meta: item.prevRaw,
+      }));
     // Removed filter to show axes even without data
 
     return {
@@ -1806,11 +1808,6 @@ export default function App() {
                   }`}
                 >
                   {stats.goalPercentage}%
-                  {stats.goalPercentage >= 100 ? (
-                    <ArrowUp className='h-3 w-3' />
-                  ) : (
-                    <ArrowDown className='h-3 w-3' />
-                  )}
                 </div>
               </div>
               <div

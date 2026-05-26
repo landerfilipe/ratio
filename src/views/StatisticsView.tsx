@@ -46,7 +46,6 @@ import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/he
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 
 const STATISTICS_RANGE_TABS: { range: TimeRange; label: string }[] = [
-  { range: 'day', label: 'Hoje' },
   { range: '7_days', label: 'Semana' },
   { range: '30_days', label: 'Mês' },
   { range: '360_days', label: 'Ano' },
