@@ -45,6 +45,13 @@ import { COLORS, getHeatmapColors, ICON_SOLID_STYLE } from '../lib/theme';
 import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/helpers';
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 
+const STATISTICS_RANGE_TABS: { range: TimeRange; label: string }[] = [
+  { range: 'day', label: 'Hoje' },
+  { range: '7_days', label: 'Semana' },
+  { range: '30_days', label: 'Mês' },
+  { range: '360_days', label: 'Ano' },
+];
+
 // Tipos para os dados (espelhando App.tsx stats)
 interface ChartDataItem {
   name: string;
@@ -66,8 +73,10 @@ interface EvolutionReportItem {
   label: string;
   current: string;
   prev: string;
+  remaining: string;
   currentRaw: number;
   prevRaw: number;
+  remainingRaw: number;
   percent: number | null;
   trend: 'up' | 'down' | 'neutral';
 }
@@ -195,30 +204,27 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   const CustomYAxisTick = createCustomYAxisTick(isDarkMode);
   const CustomRadarTick = createCustomRadarTick(isDarkMode);
 
-  // Gradient color for evolution percentages
-  // ≤-25%: red | -25% to -10%: red→yellow (orange) | -10% to +10%: yellow | +10% to +25%: yellow→green | ≥+25%: green
-  const getEvolutionColor = (percent: number | null): string => {
-    if (percent === null) return isDarkMode ? '#a3a3a3' : '#64748b';
-    const red    = { r: 239, g: 68,  b: 68  }; // #ef4444 (red-500)
-    const yellow = { r: 234, g: 179, b: 8   }; // #EAB308
-    const green  = { r: 34,  g: 197, b: 94  }; // #22c55e (green-500)
-    const p = Math.max(-25, Math.min(25, percent));
-    let r: number, g: number, b: number;
-    if (p <= -10) {
-      const t = (p + 25) / 15; // 0 at -25, 1 at -10
-      r = Math.round(red.r + (yellow.r - red.r) * t);
-      g = Math.round(red.g + (yellow.g - red.g) * t);
-      b = Math.round(red.b + (yellow.b - red.b) * t);
-    } else if (p <= 10) {
-      r = yellow.r; g = yellow.g; b = yellow.b;
-    } else {
-      const t = (p - 10) / 15; // 0 at +10, 1 at +25
-      r = Math.round(yellow.r + (green.r - yellow.r) * t);
-      g = Math.round(yellow.g + (green.g - yellow.g) * t);
-      b = Math.round(yellow.b + (green.b - yellow.b) * t);
-    }
-    return `rgb(${r}, ${g}, ${b})`;
-  };
+  const renderRemainingStatus = (minutes: number, percent: number) => (
+    <div className='text-xs font-bold flex items-center justify-end gap-1'>
+      <span className={THEME.textMuted}>Saldo:</span>
+      <span
+        className={`flex items-center gap-1 ${
+          percent >= 0 ? 'text-green-500' : 'text-red-500'
+        }`}
+      >
+        {percent >= 0 ? '+' : '-'}
+        {formatDurationDetailed(minutes)}
+        <span className={THEME.textMuted}>|</span>
+        {percent > 0 ? '+' : ''}
+        {percent}%
+        {percent >= 0 ? (
+          <ArrowUp className='h-3 w-3' />
+        ) : (
+          <ArrowDown className='h-3 w-3' />
+        )}
+      </span>
+    </div>
+  );
 
   const renderPieLegend = () => (
     <ul
@@ -320,13 +326,13 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
                   <td className={`py-2.5 text-center ${THEME.textMuted}`}>{row.prev}</td>
                   <td className='py-2.5 text-center'>
-                    <span className='font-bold' style={{ color: isDarkMode ? '#d4d4d4' : '#475569' }}>
+                    <span className='font-bold text-[#EAB308]'>
                       {row.current}
                     </span>
                   </td>
                   <td
                     className='py-2.5 text-right font-bold flex items-center justify-end gap-1'
-                    style={{ color: getEvolutionColor(row.percent) }}
+                    style={{ color: row.percent !== null && row.percent >= 0 ? '#22c55e' : '#ef4444' }}
                   >
                     {row.percent === null ? 'N/A' : `${row.percent > 0 ? '+' : ''}${row.percent}%`}
                   </td>
@@ -382,36 +388,33 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
 
       {/* DAILY RHYTHM */}
       <div className={`${THEME.card} p-6 rounded-2xl border shadow-sm relative`}>
-        <div className='flex justify-between items-center mb-4 flex-wrap gap-2 pr-0 sm:pr-8 md:pr-24'>
+        <div className='mb-6 pr-0 sm:pr-28'>
           <div className='flex items-center gap-2'>
             <h3 className={`font-bold ${THEME.text} flex items-center gap-2`}>
               <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} /> Ritmo Diário
             </h3>
           </div>
-          <div className={`flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
-            {(['7_days', '14_days', '30_days', '90_days', '180_days', '360_days'] as TimeRange[]).map((r) => (
+          <div className={`mt-3 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
+            {STATISTICS_RANGE_TABS.map(({ range, label }) => (
               <button
-                key={r}
-                onClick={() => { setDailyRhythmRange(r); triggerHaptic(); }}
+                key={range}
+                onClick={() => { setDailyRhythmRange(range); triggerHaptic(); }}
                 className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
-                  dailyRhythmRange === r
+                  dailyRhythmRange === range
                     ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                     : `${THEME.textMuted}`
                 }`}
               >
-                {r.replace('_days', 'd')}
+                {label}
               </button>
             ))}
           </div>
         </div>
-        <div
-          className={`absolute top-6 right-6 text-xs font-bold flex items-center gap-1 ${
-            stats.rhythmDeviationPercent >= 0 ? 'text-green-500' : 'text-red-500'
-          }`}
-        >
-          {stats.rhythmDeviationPercent > 0 ? '+' : ''}
-          {stats.rhythmDeviationPercent}%
-          {stats.rhythmDeviationPercent >= 0 ? <ArrowUp className='h-3 w-3' /> : <ArrowDown className='h-3 w-3' />}
+        <div className='absolute top-6 right-6'>
+          {renderRemainingStatus(
+            stats.rhythmDeltaMinutes,
+            stats.rhythmGoalDeviationPercent
+          )}
         </div>
         <div className='w-full h-56'>
           <ResponsiveContainer width='100%' height='100%'>
@@ -453,36 +456,33 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
 
       {/* LINE CHART - Accumulated */}
       <div className={`${THEME.card} p-6 rounded-2xl border shadow-sm relative`}>
-        <div className='flex justify-between items-center mb-6 flex-wrap gap-2 pr-0 sm:pr-8 md:pr-24'>
+        <div className='mb-6 pr-0 sm:pr-28'>
           <div className='flex items-center gap-2'>
             <h3 className={`font-bold ${THEME.text} flex items-center gap-2`}>
               <LineChartIcon className='h-5 w-5' style={ICON_SOLID_STYLE} /> Estudo Acumulado
             </h3>
           </div>
-          <div className={`flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
-            {(['7_days', '14_days', '30_days', '90_days', '180_days', '360_days'] as TimeRange[]).map((r) => (
+          <div className={`mt-3 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
+            {STATISTICS_RANGE_TABS.map(({ range, label }) => (
               <button
-                key={r}
-                onClick={() => { setLineChartRange(r); triggerHaptic(); }}
+                key={range}
+                onClick={() => { setLineChartRange(range); triggerHaptic(); }}
                 className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
-                  lineChartRange === r
+                  lineChartRange === range
                     ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                     : `${THEME.textMuted}`
                 }`}
               >
-                {r.replace('_days', 'd')}
+                {label}
               </button>
             ))}
           </div>
         </div>
-        <div
-          className={`absolute top-6 right-6 text-xs font-bold flex items-center gap-1 ${
-            stats.accumulatedDeviationPercent >= 0 ? 'text-green-500' : 'text-red-500'
-          }`}
-        >
-          {stats.accumulatedDeviationPercent > 0 ? '+' : ''}
-          {stats.accumulatedDeviationPercent}%
-          {stats.accumulatedDeviationPercent >= 0 ? <ArrowUp className='h-3 w-3' /> : <ArrowDown className='h-3 w-3' />}
+        <div className='absolute top-6 right-6'>
+          {renderRemainingStatus(
+            stats.accumulatedDeltaMinutes,
+            stats.accumulatedDeviationPercent
+          )}
         </div>
         <div className='w-full h-56'>
           <ResponsiveContainer width='100%' height='100%'>
@@ -510,7 +510,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <RechartsTooltip
                 formatter={(val: number, name: string) => [
                   formatDurationDetailed(val),
-                  name === 'reference' ? 'Meta (3h/dia)' : 'Realizado',
+                  name === 'reference' ? 'Meta' : 'Realizado',
                 ]}
                 contentStyle={{
                   backgroundColor: isDarkMode ? '#171717' : '#fff',

@@ -109,6 +109,33 @@ import type {
 } from './types';
 import { LoginSkeleton } from './components/Skeletons';
 
+const DASHBOARD_PERIODS: { range: TimeRange; label: string }[] = [
+  { range: 'day', label: 'Hoje' },
+  { range: '7_days', label: 'Semana' },
+  { range: '30_days', label: 'Mês' },
+  { range: '360_days', label: 'Ano' },
+];
+
+const STATISTICS_PERIODS: {
+  days: number;
+  label: string;
+  goalMinutes: number;
+}[] = [
+  { days: 1, label: 'Hoje', goalMinutes: 180 },
+  { days: 7, label: 'Semana', goalMinutes: 20 * 60 },
+  { days: 30, label: 'Mês', goalMinutes: 80 * 60 },
+  { days: 360, label: 'Ano', goalMinutes: 900 * 60 },
+];
+
+const getPeriodGoalMinutes = (
+  days: number,
+  dailyGoalMinutes = 180
+): number =>
+  days === 1
+    ? dailyGoalMinutes
+    : STATISTICS_PERIODS.find((period) => period.days === days)?.goalMinutes ??
+      dailyGoalMinutes * days;
+
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -883,7 +910,10 @@ export default function App() {
     });
 
     const REFERENCE_MINUTES_PER_DAY = profile.dailyGoalMinutes || 180;
-    const currentGoalMinutes = REFERENCE_MINUTES_PER_DAY * selectedRangeDays;
+    const currentGoalMinutes = getPeriodGoalMinutes(
+      selectedRangeDays,
+      REFERENCE_MINUTES_PER_DAY
+    );
     const goalPercentage =
       currentGoalMinutes > 0
         ? Math.round((rangeMinutes / currentGoalMinutes) * 100)
@@ -894,6 +924,8 @@ export default function App() {
             ((rangeMinutes - currentGoalMinutes) / currentGoalMinutes) * 100
           )
         : 0;
+    const goalRemainingMinutes = Math.max(currentGoalMinutes - rangeMinutes, 0);
+    const goalDeltaMinutes = Math.abs(rangeMinutes - currentGoalMinutes);
 
     if (view !== 'statistics') {
       return {
@@ -917,10 +949,17 @@ export default function App() {
         getDaysInMonth,
         getFirstDayOfMonth,
         currentGoalMinutes,
+        goalRemainingMinutes,
+        goalDeltaMinutes,
         filteredCount: filteredSessions.length,
         evolutionReport: [],
         goalPercentage,
         goalDeviation,
+        rhythmGoalDeviationPercent: 0,
+        rhythmRemainingMinutes: 0,
+        rhythmDeltaMinutes: 0,
+        accumulatedRemainingMinutes: 0,
+        accumulatedDeltaMinutes: 0,
         rhythmDeviationPercent: 0,
         accumulatedDeviationPercent: 0,
       };
@@ -972,6 +1011,17 @@ export default function App() {
     const barChartData = aggregatedData;
     const pieLegendData = aggregatedData;
 
+    const calcMinutesInPeriod = (start: Date, end: Date) => {
+      const s = start.getTime();
+      const e = end.getTime() + 24 * 60 * 60 * 1000;
+      return sessions
+        .filter((sess) => {
+          const t = new Date(sess.date).getTime();
+          return t >= s && t < e;
+        })
+        .reduce((acc, curr) => acc + curr.durationMinutes, 0);
+    };
+
     // Line Chart
     const lineChartData: {
       date: string;
@@ -979,6 +1029,10 @@ export default function App() {
       reference: number;
     }[] = [];
     const lineDaysLimit = getDaysFromRange(lineChartRange);
+    const lineReferenceGoal = getPeriodGoalMinutes(
+      lineDaysLimit,
+      REFERENCE_MINUTES_PER_DAY
+    );
     const lineMap = new Map<string, number>();
     const lineStartDate = new Date(todayStart);
     lineStartDate.setDate(lineStartDate.getDate() - (lineDaysLimit - 1));
@@ -1016,7 +1070,7 @@ export default function App() {
             month: '2-digit',
           }),
           accumulated: runningTotal,
-          reference: (index + 1) * REFERENCE_MINUTES_PER_DAY,
+          reference: Math.round(((index + 1) / lineDaysLimit) * lineReferenceGoal),
         });
       });
 
@@ -1121,32 +1175,38 @@ export default function App() {
               100
           )
         : 0;
+    const rhythmPeriodEnd = new Date(todayStart);
+    const rhythmPeriodStart = new Date(todayStart);
+    rhythmPeriodStart.setDate(rhythmPeriodStart.getDate() - rhythmDays + 1);
+    const rhythmPeriodMinutes = calcMinutesInPeriod(
+      rhythmPeriodStart,
+      rhythmPeriodEnd
+    );
+    const rhythmPeriodGoal = getPeriodGoalMinutes(
+      rhythmDays,
+      REFERENCE_MINUTES_PER_DAY
+    );
+    const rhythmRemainingMinutes = Math.max(
+      rhythmPeriodGoal - rhythmPeriodMinutes,
+      0
+    );
+    const rhythmDeltaMinutes = Math.abs(rhythmPeriodMinutes - rhythmPeriodGoal);
+    const rhythmGoalDeviationPercent =
+      rhythmPeriodGoal > 0
+        ? Math.round(
+            ((rhythmPeriodMinutes - rhythmPeriodGoal) / rhythmPeriodGoal) * 100
+          )
+        : 0;
 
-    // Week Data - Removed as per instruction to replace with Comparison
-    // const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']; ...
-
-    // Comparison Logic (Generic)
-    const calcMinutesInPeriod = (start: Date, end: Date) => {
-      const s = start.getTime();
-      const e = end.getTime() + 24 * 60 * 60 * 1000;
-      return sessions
-        .filter((sess) => {
-          const t = new Date(sess.date).getTime();
-          return t >= s && t < e;
-        })
-        .reduce((acc, curr) => acc + curr.durationMinutes, 0);
-    };
-
-    // Calculate Evolution Report (7, 14, 30, 90, 180, 360)
-    // "Meta" = daily goal × days; "Atual" = actual minutes in the period
-    const evolutionPeriods = [7, 14, 30, 90, 180, 360];
-    const evolutionReport = evolutionPeriods.map((days) => {
+    // Calculate Evolution Report using the visible summary periods.
+    const evolutionReport = STATISTICS_PERIODS.map((period) => {
+      const { days } = period;
       const endCurrent = new Date(todayStart);
       const startCurrent = new Date(todayStart);
       startCurrent.setDate(startCurrent.getDate() - days + 1);
 
       const currentMins = calcMinutesInPeriod(startCurrent, endCurrent);
-      const metaMins = REFERENCE_MINUTES_PER_DAY * days;
+      const metaMins = getPeriodGoalMinutes(days, REFERENCE_MINUTES_PER_DAY);
 
       let percent: number | null = null;
       if (metaMins > 0) {
@@ -1155,11 +1215,13 @@ export default function App() {
 
       return {
         days,
-        label: `${days}d`,
+        label: period.label,
         current: formatDurationDetailed(currentMins),
         prev: formatDurationDetailed(metaMins),
+        remaining: formatDurationDetailed(Math.max(metaMins - currentMins, 0)),
         currentRaw: currentMins,
         prevRaw: metaMins,
+        remainingRaw: Math.max(metaMins - currentMins, 0),
         percent,
         trend: percent !== null ? (percent >= 0 ? 'up' : 'down') : 'neutral',
       };
@@ -1188,8 +1250,10 @@ export default function App() {
     else if (currentPeriodMinutes > 0) growthPercent = 100;
 
     // Deviation for Accumulated Line Chart
-    const totalReference =
-      getDaysFromRange(lineChartRange) * REFERENCE_MINUTES_PER_DAY;
+    const totalReference = getPeriodGoalMinutes(
+      getDaysFromRange(lineChartRange),
+      REFERENCE_MINUTES_PER_DAY
+    );
     const accumulatedTotalMins =
       lineChartData.length > 0
         ? lineChartData[lineChartData.length - 1].accumulated
@@ -1200,6 +1264,13 @@ export default function App() {
             ((accumulatedTotalMins - totalReference) / totalReference) * 100
           )
         : 0;
+    const accumulatedRemainingMinutes = Math.max(
+      totalReference - accumulatedTotalMins,
+      0
+    );
+    const accumulatedDeltaMinutes = Math.abs(
+      accumulatedTotalMins - totalReference
+    );
 
     // Data for the NEW Comparative Bar Chart (replacing day of week)
     // Structure: [ {name: '7d', prev: X, current: Y}, ... ]
@@ -1231,10 +1302,17 @@ export default function App() {
       getDaysInMonth,
       getFirstDayOfMonth,
       currentGoalMinutes,
+      goalRemainingMinutes,
+      goalDeltaMinutes,
       filteredCount: filteredSessions.length,
       evolutionReport,
       goalPercentage,
       goalDeviation,
+      rhythmGoalDeviationPercent,
+      rhythmRemainingMinutes,
+      rhythmDeltaMinutes,
+      accumulatedRemainingMinutes,
+      accumulatedDeltaMinutes,
       rhythmDeviationPercent,
       accumulatedDeviationPercent,
     };
@@ -1592,30 +1670,20 @@ export default function App() {
                     : 'bg-white border-slate-200'
                 } p-1 rounded-xl border shadow-sm flex text-sm w-full overflow-x-auto gap-1 hide-scrollbar`}
               >
-                {(
-                  [
-                    'day',
-                    '7_days',
-                    '14_days',
-                    '30_days',
-                    '90_days',
-                    '180_days',
-                    '360_days',
-                  ] as TimeRange[]
-                ).map((r) => (
+                {DASHBOARD_PERIODS.map(({ range, label }) => (
                   <button
-                    key={r}
+                    key={range}
                     onClick={() => {
-                      setTimeRange(r);
+                      setTimeRange(range);
                       triggerHaptic();
                     }}
                     className={`px-3 py-2 rounded-lg whitespace-nowrap transition-all font-bold text-xs flex-shrink-0 ${
-                      timeRange === r
+                      timeRange === range
                         ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                         : `${THEME.textMuted} hover:opacity-80`
                     }`}
                   >
-                    {r === 'day' ? 'Hoje' : r.replace('_days', 'd')}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -1669,19 +1737,28 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                {/* Deviation for Goal Bar (Symbols + Arrows + Colors) */}
                 <span
-                  className={`text-xs font-bold animate-in fade-in slide-in-from-bottom-1 duration-300 flex items-center gap-1 ${
-                    stats.goalDeviation >= 0 ? 'text-green-500' : 'text-red-500'
-                  }`}
+                  className='text-xs font-bold animate-in fade-in slide-in-from-bottom-1 duration-300 flex items-center gap-1'
                 >
-                  {stats.goalDeviation > 0 ? '+' : ''}
-                  {stats.goalDeviation}%
-                  {stats.goalDeviation >= 0 ? (
-                    <ArrowUp className='h-3 w-3' />
-                  ) : (
-                    <ArrowDown className='h-3 w-3' />
-                  )}
+                  <span className={THEME.textMuted}>
+                    Saldo:
+                  </span>
+                  <span
+                    className={`flex items-center gap-1 ${
+                      stats.goalDeviation >= 0 ? 'text-green-500' : 'text-red-500'
+                    }`}
+                  >
+                    {stats.goalDeviation >= 0 ? '+' : '-'}
+                    {formatDurationDetailed(stats.goalDeltaMinutes)}
+                    <span className={THEME.textMuted}>|</span>
+                    {stats.goalDeviation > 0 ? '+' : ''}
+                    {stats.goalDeviation}%
+                    {stats.goalDeviation >= 0 ? (
+                      <ArrowUp className='h-3 w-3' />
+                    ) : (
+                      <ArrowDown className='h-3 w-3' />
+                    )}
+                  </span>
                 </span>
               </div>
               <div
@@ -1709,14 +1786,7 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  {timeRange === 'day' ? (
-                    <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
-                  ) : (
-                    <TrendingUp
-                      className='h-4 w-4'
-                      style={ICON_SOLID_STYLE}
-                    />
-                  )}
+                  <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
                     {timeRange === 'day' ? getRangeLabel(timeRange) : 'Média'}
                   </span>
@@ -1731,18 +1801,20 @@ export default function App() {
                       : stats.avgMinutesPerSelectedDay
                   )}
                 </div>
-                {/* Period Card Logic SWAPPED: Now has ONLY Percentage + Color (No arrows/symbols) */}
-                {timeRange === 'day' && (
-                  <div
-                    className={`absolute top-4 right-4 text-xs font-bold ${
-                      stats.goalPercentage >= 100
-                        ? 'text-green-500'
-                        : 'text-red-500'
-                    }`}
-                  >
-                    {stats.goalPercentage}%
-                  </div>
-                )}
+                <div
+                  className={`absolute top-4 right-4 text-xs font-bold flex items-center gap-1 ${
+                    stats.goalPercentage >= 100
+                      ? 'text-green-500'
+                      : 'text-red-500'
+                  }`}
+                >
+                  {stats.goalPercentage}%
+                  {stats.goalPercentage >= 100 ? (
+                    <ArrowUp className='h-3 w-3' />
+                  ) : (
+                    <ArrowDown className='h-3 w-3' />
+                  )}
+                </div>
               </div>
               <div
                 className={`${THEME.card} p-5 rounded-2xl border shadow-sm relative overflow-hidden`}
@@ -1750,14 +1822,7 @@ export default function App() {
                 <div
                   className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
                 >
-                  {timeRange === 'day' ? (
-                    <TrendingUp
-                      className='h-4 w-4'
-                      style={ICON_SOLID_STYLE}
-                    />
-                  ) : (
-                    <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
-                  )}
+                  <TrendingUp className='h-4 w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-[10px] font-bold uppercase tracking-wider'>
                     Total
                   </span>
@@ -1772,17 +1837,6 @@ export default function App() {
                       : stats.rangeMinutes
                   )}
                 </div>
-                {timeRange !== 'day' && (
-                  <div
-                    className={`absolute top-4 right-4 text-xs font-bold ${
-                      stats.goalPercentage >= 100
-                        ? 'text-green-500'
-                        : 'text-red-500'
-                    }`}
-                  >
-                    {stats.goalPercentage}%
-                  </div>
-                )}
               </div>
               <div
                 className={`hidden md:block ${THEME.card} p-5 rounded-2xl border shadow-sm`}
