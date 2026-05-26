@@ -48,6 +48,8 @@ import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 const STATISTICS_RANGE_TABS: { range: TimeRange; label: string }[] = [
   { range: '7_days', label: 'Semana' },
   { range: '30_days', label: 'Mês' },
+  { range: '90_days', label: 'Trimestre' },
+  { range: '180_days', label: 'Semestre' },
   { range: '360_days', label: 'Ano' },
 ];
 
@@ -212,7 +214,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
       >
         {percent >= 0 ? '+' : '-'}
         {formatDurationDetailed(minutes)}
-        <span className={THEME.textMuted}>|</span>
+        <span className={THEME.textMuted}>•</span>
         {percent > 0 ? '+' : ''}
         {percent}%
         {percent >= 0 ? (
@@ -245,62 +247,21 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
     </ul>
   );
 
-  return (
-    <div className='space-y-6 animate-in fade-in duration-300 ease-out'>
-      {/* HEATMAP */}
-      <div className={`${THEME.card} p-5 rounded-2xl border shadow-sm w-full`}>
-        <div className='flex justify-between items-center mb-6'>
-          <h3 className={`font-bold ${THEME.text} flex items-center gap-2`}>
-            <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} /> Frequência de Estudo
-          </h3>
-          <div className={`flex items-center gap-2 p-1 rounded-lg ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
-            <span className='text-xs font-bold px-2'>{heatmapYear}</span>
-          </div>
-        </div>
+  const renderSectionHeader = (title: string, question: string) => (
+    <div className='px-1 pt-2'>
+      <p className={`text-[10px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
+        {title}
+      </p>
+      <h2 className={`mt-1 text-base font-bold ${THEME.text}`}>
+        {question}
+      </h2>
+    </div>
+  );
 
-        <div
-          className='flex justify-start w-full gap-1 flex-wrap content-start'
-          style={{ maxHeight: '200px', overflowY: 'hidden' }}
-        >
-          {(stats.heatmapData || []).map((day: HeatmapDataItem, idx: number) => (
-            <div
-              key={idx}
-              title={`${new Date(day.date).toLocaleDateString()}: ${formatDurationDetailed(day.count)}`}
-              className={`w-2 h-2 sm:w-3 sm:h-3 rounded-[1px] transition-all duration-300 hover:scale-125 ${
-                day.isGoalMet ? 'border border-[#EAB308] shadow-[0_0_5px_#EAB308]' : ''
-              }`}
-              style={{ backgroundColor: HEATMAP_COLORS[day.level] }}
-            ></div>
-          ))}
-        </div>
-        <div className='flex items-center justify-between mt-4'>
-          <div className='flex items-center gap-2'>
-            <button
-              onClick={() => setHeatmapYear((y) => y - 1)}
-              aria-label="Ano anterior"
-              className={`p-1 rounded ${THEME.textMuted} hover:bg-neutral-800`}
-            >
-              <ChevronLeft className='h-4 w-4' />
-            </button>
-            <span className={`text-xs font-bold ${THEME.text}`}>{heatmapYear}</span>
-            <button
-              onClick={() => setHeatmapYear((y) => y + 1)}
-              aria-label="Próximo ano"
-              className={`p-1 rounded ${THEME.textMuted} hover:bg-neutral-800`}
-            >
-              <ChevronRight className='h-4 w-4' />
-            </button>
-          </div>
-          <div className='flex items-center gap-2 text-[10px] text-slate-400'>
-            <span>-</span>
-            <div className='flex gap-1'>
-              {HEATMAP_COLORS.map((c) => (
-                <div key={c} className='w-2 h-2 rounded-[1px]' style={{ backgroundColor: c }}></div>
-              ))}
-            </div>
-            <span>+</span>
-          </div>
-        </div>
+  return (
+    <div className='flex flex-col gap-6 animate-in fade-in duration-300 ease-out'>
+      <div>
+        {renderSectionHeader('Meta', 'Estou cumprindo a meta?')}
       </div>
 
       {/* EVOLUTION TABLE */}
@@ -322,7 +283,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               {(stats.evolutionReport || []).map((row: EvolutionReportItem) => (
                 <tr key={row.days} className={`border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'}`}>
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
-                  <td className={`py-2.5 text-center ${THEME.textMuted}`}>{row.prev}</td>
+                  <td className={`py-2.5 text-center font-bold ${THEME.textMuted}`}>{row.prev}</td>
                   <td className='py-2.5 text-center'>
                     <span className='font-bold text-[#EAB308]'>
                       {row.current}
@@ -384,71 +345,60 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
         </div>
       </div>
 
-      {/* DAILY RHYTHM */}
-      <div className={`${THEME.card} p-6 rounded-2xl border shadow-sm relative`}>
-        <div className='mb-6 pr-0 sm:pr-28'>
+      <div>
+        {renderSectionHeader('Constância', 'Estou mantendo o ritmo?')}
+      </div>
+
+      {/* HEATMAP */}
+      <div className={`${THEME.card} p-5 rounded-2xl border shadow-sm w-full`}>
+        <div className='flex items-center mb-6'>
+          <h3 className={`font-bold ${THEME.text} flex items-center gap-2`}>
+            <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} /> Frequência de Estudo
+          </h3>
+        </div>
+
+        <div
+          className='flex justify-start w-full gap-1 flex-wrap content-start'
+          style={{ maxHeight: '200px', overflowY: 'hidden' }}
+        >
+          {(stats.heatmapData || []).map((day: HeatmapDataItem, idx: number) => (
+            <div
+              key={idx}
+              title={`${new Date(day.date).toLocaleDateString()}: ${formatDurationDetailed(day.count)}`}
+              className={`w-2 h-2 sm:w-3 sm:h-3 rounded-[1px] transition-all duration-300 hover:scale-125 ${
+                day.isGoalMet ? 'border border-[#EAB308] shadow-[0_0_5px_#EAB308]' : ''
+              }`}
+              style={{ backgroundColor: HEATMAP_COLORS[day.level] }}
+            ></div>
+          ))}
+        </div>
+        <div className='flex items-center justify-between mt-4'>
           <div className='flex items-center gap-2'>
-            <h3 className={`font-bold ${THEME.text} flex items-center gap-2`}>
-              <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} /> Ritmo Diário
-            </h3>
+            <button
+              onClick={() => setHeatmapYear((y) => y - 1)}
+              aria-label="Ano anterior"
+              className={`p-1 rounded ${THEME.textMuted} hover:bg-neutral-800`}
+            >
+              <ChevronLeft className='h-4 w-4' />
+            </button>
+            <span className={`text-xs font-bold ${THEME.text}`}>{heatmapYear}</span>
+            <button
+              onClick={() => setHeatmapYear((y) => y + 1)}
+              aria-label="Próximo ano"
+              className={`p-1 rounded ${THEME.textMuted} hover:bg-neutral-800`}
+            >
+              <ChevronRight className='h-4 w-4' />
+            </button>
           </div>
-          <div className={`mt-1 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
-            {STATISTICS_RANGE_TABS.map(({ range, label }) => (
-              <button
-                key={range}
-                onClick={() => { setDailyRhythmRange(range); triggerHaptic(); }}
-                className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
-                  dailyRhythmRange === range
-                    ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
-                    : `${THEME.textMuted}`
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className='flex items-center gap-2 text-[10px] text-slate-400'>
+            <span>-</span>
+            <div className='flex gap-1'>
+              {HEATMAP_COLORS.map((c) => (
+                <div key={c} className='w-2 h-2 rounded-[1px]' style={{ backgroundColor: c }}></div>
+              ))}
+            </div>
+            <span>+</span>
           </div>
-        </div>
-        <div className='absolute top-[18px] right-[18px]'>
-          {renderRemainingStatus(
-            stats.rhythmDeltaMinutes,
-            stats.rhythmGoalDeviationPercent
-          )}
-        </div>
-        <div className='w-full h-56'>
-          <ResponsiveContainer width='100%' height='100%'>
-            <ComposedChart data={stats.dailyRhythmData} margin={{ top: 5, right: 10, bottom: 5, left: -15 }}>
-              <defs>
-                <linearGradient id='chartGradient' x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset='0%' stopColor='#FDE047' />
-                  <stop offset='100%' stopColor='#EAB308' />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray='3 3' vertical={false} stroke={isDarkMode ? '#333' : '#eee'} />
-              <XAxis
-                dataKey='date'
-                tick={{ fontSize: 9, fill: isDarkMode ? '#888' : '#666' }}
-                interval='preserveStartEnd'
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: isDarkMode ? '#888' : '#666' }}
-                tickFormatter={formatAxisTick}
-                axisLine={false}
-                tickLine={false}
-              />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: isDarkMode ? '#171717' : '#fff',
-                  borderColor: isDarkMode ? '#333' : '#eee',
-                }}
-                itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-              />
-              <Bar dataKey='minutes' fill={isDarkMode ? '#333' : '#e2e8f0'} radius={[4, 4, 0, 0]} name='Minutos' />
-              <Line type='monotone' dataKey='ma' stroke='url(#chartGradient)' strokeWidth={2} dot={false} name='Média' />
-            </ComposedChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
@@ -537,6 +487,78 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             </LineChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      {/* DAILY RHYTHM */}
+      <div className={`${THEME.card} p-6 rounded-2xl border shadow-sm relative`}>
+        <div className='mb-6 pr-0 sm:pr-28'>
+          <div className='flex items-center gap-2'>
+            <h3 className={`font-bold ${THEME.text} flex items-center gap-2`}>
+              <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} /> Ritmo Diário
+            </h3>
+          </div>
+          <div className={`mt-1 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
+            {STATISTICS_RANGE_TABS.map(({ range, label }) => (
+              <button
+                key={range}
+                onClick={() => { setDailyRhythmRange(range); triggerHaptic(); }}
+                className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
+                  dailyRhythmRange === range
+                    ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
+                    : `${THEME.textMuted}`
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className='absolute top-[18px] right-[18px]'>
+          {renderRemainingStatus(
+            stats.rhythmDeltaMinutes,
+            stats.rhythmGoalDeviationPercent
+          )}
+        </div>
+        <div className='w-full h-56'>
+          <ResponsiveContainer width='100%' height='100%'>
+            <ComposedChart data={stats.dailyRhythmData} margin={{ top: 5, right: 10, bottom: 5, left: -15 }}>
+              <defs>
+                <linearGradient id='chartGradient' x1='0' y1='0' x2='1' y2='0'>
+                  <stop offset='0%' stopColor='#FDE047' />
+                  <stop offset='100%' stopColor='#EAB308' />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray='3 3' vertical={false} stroke={isDarkMode ? '#333' : '#eee'} />
+              <XAxis
+                dataKey='date'
+                tick={{ fontSize: 9, fill: isDarkMode ? '#888' : '#666' }}
+                interval='preserveStartEnd'
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: isDarkMode ? '#888' : '#666' }}
+                tickFormatter={formatAxisTick}
+                axisLine={false}
+                tickLine={false}
+              />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: isDarkMode ? '#171717' : '#fff',
+                  borderColor: isDarkMode ? '#333' : '#eee',
+                }}
+                itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+              />
+              <Bar dataKey='minutes' fill={isDarkMode ? '#333' : '#e2e8f0'} radius={[4, 4, 0, 0]} name='Minutos' />
+              <Line type='monotone' dataKey='ma' stroke='url(#chartGradient)' strokeWidth={2} dot={false} name='Média' />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div>
+        {renderSectionHeader('Foco', 'Onde estou colocando meu tempo?')}
       </div>
 
       {/* DISTRIBUTION CHARTS */}

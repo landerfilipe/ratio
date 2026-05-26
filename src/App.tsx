@@ -32,7 +32,6 @@ import {
   Plus,
   LogOut,
   History,
-  CheckCircle2,
   Calendar as CalendarIcon,
   ArrowDown,
   ArrowUp,
@@ -46,8 +45,6 @@ import {
   MapPin,
   Save,
   Trophy,
-  Moon,
-  Sun,
   Edit2,
   X,
   Check,
@@ -56,7 +53,6 @@ import {
   Pause,
   RotateCcw,
   Hourglass,
-  Download,
 } from 'lucide-react';
 
 // --- LAZY LOADING: StatisticsView contém todo o Recharts (~400KB) ---
@@ -104,7 +100,6 @@ import type {
   SortOrder,
   ViewState,
   TimerMode,
-  BeforeInstallPromptEvent,
   User,
 } from './types';
 import { LoginSkeleton } from './components/Skeletons';
@@ -113,31 +108,30 @@ const DASHBOARD_PERIODS: { range: TimeRange; label: string }[] = [
   { range: 'day', label: 'Hoje' },
   { range: '7_days', label: 'Semana' },
   { range: '30_days', label: 'Mês' },
+  { range: '90_days', label: 'Trimestre' },
+  { range: '180_days', label: 'Semestre' },
   { range: '360_days', label: 'Ano' },
 ];
 
 const STATISTICS_PERIODS: {
   days: number;
   label: string;
-  goalMinutes: number;
 }[] = [
-  { days: 1, label: 'Hoje', goalMinutes: 180 },
-  { days: 7, label: 'Semana', goalMinutes: 20 * 60 },
-  { days: 30, label: 'Mês', goalMinutes: 80 * 60 },
-  { days: 360, label: 'Ano', goalMinutes: 900 * 60 },
+  { days: 1, label: 'Hoje' },
+  { days: 7, label: 'Semana' },
+  { days: 30, label: 'Mês' },
+  { days: 90, label: 'Trimestre' },
+  { days: 180, label: 'Semestre' },
+  { days: 360, label: 'Ano' },
 ];
 
 const getPeriodGoalMinutes = (
   days: number,
   dailyGoalMinutes = 180
-): number =>
-  days === 1
-    ? dailyGoalMinutes
-    : STATISTICS_PERIODS.find((period) => period.days === days)?.goalMinutes ??
-      dailyGoalMinutes * days;
+): number => dailyGoalMinutes * days;
 
 export default function App() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const isDarkMode = true;
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -189,11 +183,6 @@ export default function App() {
   const [editError, setEditError] = useState<string | null>(null);
   const [applySubjectToAll, setApplySubjectToAll] = useState(false);
 
-  // PWA Install State
-  // Tipagem estrita para PWA install prompt (economiza debugging e evita erros de runtime)
-  const [installPrompt, setInstallPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-
   // Timer State with Persistence
   const [timerMode, setTimerMode] = useState<TimerMode>(() => {
     if (typeof localStorage !== 'undefined') {
@@ -236,16 +225,6 @@ export default function App() {
     const offset = date.getTimezoneOffset();
     const localDate = new Date(date.getTime() - offset * 60 * 1000);
     return localDate.toISOString().slice(0, 16);
-  }, []);
-
-  // PWA Install Listener - Tipagem estrita para evitar `any`
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   // Save Timer State to LocalStorage
@@ -490,16 +469,6 @@ export default function App() {
     signOut(auth);
     setSessions([]);
   }, []);
-
-  const handleInstallClick = async () => {
-    if (!installPrompt) return;
-    triggerHaptic();
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstallPrompt(null);
-    }
-  };
 
   const handleAddSession = useCallback(
     async (e: React.FormEvent) => {
@@ -1217,7 +1186,7 @@ export default function App() {
         days,
         label: period.label,
         current: formatDurationDetailed(currentMins),
-        prev: formatDurationDetailed(metaMins),
+        prev: formatGoalDuration(metaMins),
         remaining: formatDurationDetailed(Math.max(metaMins - currentMins, 0)),
         currentRaw: currentMins,
         prevRaw: metaMins,
@@ -1613,26 +1582,6 @@ export default function App() {
                 )}
               </div>
               <button
-                onClick={() => {
-                  setIsDarkMode(!isDarkMode);
-                  triggerHaptic();
-                }}
-                aria-label={
-                  isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'
-                }
-                className={`p-2 rounded-full active:scale-90 transition-transform ${
-                  isDarkMode
-                    ? 'bg-neutral-800 hover:bg-neutral-700'
-                    : 'bg-slate-100 hover:bg-slate-200'
-                }`}
-              >
-                {isDarkMode ? (
-                  <Sun className='h-4 w-4' />
-                ) : (
-                  <Moon className='h-4 w-4' />
-                )}
-              </button>
-              <button
                 onClick={handleLogout}
                 aria-label='Sair da conta'
                 className='text-xs bg-neutral-800 hover:bg-neutral-700 text-white px-3 py-2 rounded-lg flex gap-1 items-center font-bold transition-all active:scale-95'
@@ -1749,7 +1698,7 @@ export default function App() {
                   >
                     {stats.goalDeviation >= 0 ? '+' : '-'}
                     {formatDurationDetailed(stats.goalDeltaMinutes)}
-                    <span className={THEME.textMuted}>|</span>
+                    <span className={THEME.textMuted}>•</span>
                     {stats.goalDeviation > 0 ? '+' : ''}
                     {stats.goalDeviation}%
                     {stats.goalDeviation >= 0 ? (
@@ -1778,7 +1727,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-2 gap-4'>
               <div
                 className={`${THEME.card} p-5 rounded-2xl border shadow-sm relative`}
               >
@@ -1830,24 +1779,6 @@ export default function App() {
                       ? stats.totalMinutes
                       : stats.rangeMinutes
                   )}
-                </div>
-              </div>
-              <div
-                className={`hidden md:block ${THEME.card} p-5 rounded-2xl border shadow-sm`}
-              >
-                <div
-                  className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
-                >
-                  <CheckCircle2 className='h-4 w-4' style={ICON_SOLID_STYLE} />
-                  <span className='text-[10px] font-bold uppercase tracking-wider'>
-                    Sessões
-                  </span>
-                </div>
-                {/* Animação sutil no número principal */}
-                <div
-                  className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 ${THEME.text}`}
-                >
-                  {stats.filteredCount}
                 </div>
               </div>
             </div>
@@ -2805,16 +2736,6 @@ export default function App() {
                     <MapPin className='h-3 w-3' style={ICON_SOLID_STYLE} />{' '}
                     {profile.location}
                   </p>
-                )}
-
-                {/* Botão de Instalar PWA */}
-                {installPrompt && (
-                  <button
-                    onClick={handleInstallClick}
-                    className='mt-4 px-4 py-2 rounded-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black text-sm font-bold flex items-center gap-2 mx-auto shadow-md transition-transform active:scale-95'
-                  >
-                    <Download className='h-4 w-4' /> Instalar Aplicativo
-                  </button>
                 )}
               </div>
             </div>
