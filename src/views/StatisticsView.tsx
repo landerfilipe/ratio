@@ -205,8 +205,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   const CustomRadarTick = createCustomRadarTick(isDarkMode);
 
   const renderRemainingStatus = (minutes: number, percent: number) => (
-    <div className='text-xs font-bold flex items-center justify-end gap-1'>
-      <span className={THEME.textMuted}>Saldo:</span>
+    <div className='text-[11px] font-bold flex items-center justify-end gap-1'>
       <span
         className={`flex items-center gap-1 ${
           percent >= 0 ? 'text-green-500' : 'text-red-500'
@@ -394,7 +393,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <Activity className='h-5 w-5' style={ICON_SOLID_STYLE} /> Ritmo Diário
             </h3>
           </div>
-          <div className={`mt-3 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
+          <div className={`mt-1 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
             {STATISTICS_RANGE_TABS.map(({ range, label }) => (
               <button
                 key={range}
@@ -410,7 +409,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             ))}
           </div>
         </div>
-        <div className='absolute top-6 right-6'>
+        <div className='absolute top-[18px] right-[18px]'>
           {renderRemainingStatus(
             stats.rhythmDeltaMinutes,
             stats.rhythmGoalDeviationPercent
@@ -462,7 +461,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <LineChartIcon className='h-5 w-5' style={ICON_SOLID_STYLE} /> Estudo Acumulado
             </h3>
           </div>
-          <div className={`mt-3 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
+          <div className={`mt-1 flex p-1 rounded-lg text-xs overflow-x-auto max-w-full hide-scrollbar ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
             {STATISTICS_RANGE_TABS.map(({ range, label }) => (
               <button
                 key={range}
@@ -478,7 +477,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             ))}
           </div>
         </div>
-        <div className='absolute top-6 right-6'>
+        <div className='absolute top-[18px] right-[18px]'>
           {renderRemainingStatus(
             stats.accumulatedDeltaMinutes,
             stats.accumulatedDeviationPercent

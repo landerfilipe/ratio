@@ -1738,11 +1738,8 @@ export default function App() {
                   )}
                 </div>
                 <span
-                  className='text-xs font-bold animate-in fade-in slide-in-from-bottom-1 duration-300 flex items-center gap-1'
+                  className='text-[11px] font-bold animate-in fade-in slide-in-from-bottom-1 duration-300 flex items-center gap-1'
                 >
-                  <span className={THEME.textMuted}>
-                    Saldo:
-                  </span>
                   <span
                     className={`flex items-center gap-1 ${
                       stats.goalDeviation >= 0 ? 'text-green-500' : 'text-red-500'
