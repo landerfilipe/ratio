@@ -848,17 +848,15 @@ export default function App() {
 
     const filteredSessions = sessions.filter((s) => {
       const sDate = new Date(s.date);
-      const sDateStart = new Date(
-        sDate.getFullYear(),
-        sDate.getMonth(),
-        sDate.getDate()
-      );
-      const diffTime = Math.abs(todayStart.getTime() - sDateStart.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       if (timeRange === 'day')
         return sDate.toDateString() === now.toDateString();
       const days = getDaysFromRange(timeRange);
-      return diffDays <= days;
+      const rangeStart = new Date(todayStart);
+      rangeStart.setDate(rangeStart.getDate() - days + 1);
+      const rangeEnd = new Date(todayStart);
+      rangeEnd.setDate(rangeEnd.getDate() + 1);
+      const sTime = new Date(s.date).getTime();
+      return sTime >= rangeStart.getTime() && sTime < rangeEnd.getTime();
     });
     const rangeMinutes = filteredSessions.reduce(
       (acc, curr) => acc + curr.durationMinutes,
