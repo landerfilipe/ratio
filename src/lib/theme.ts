@@ -33,6 +33,15 @@ export const ICON_SOLID_STYLE = { stroke: ICON_SOLID_COLOR };
 // Estilo para header (gradiente)
 export const ICON_HEADER_STYLE = { stroke: 'url(#gold-gradient)' };
 
+// Escala de cor por Δ% em relação à meta
+export const getPercentColor = (delta: number): string => {
+  if (delta <= -50) return '#dc2626';
+  if (delta <= -25) return '#f97316';
+  if (delta < 0)    return '#eab308';
+  if (delta < 33)   return '#22c55e';
+  return '#4ade80';
+};
+
 // Função para gerar classes de tema
 export const getThemeClasses = (isDarkMode: boolean) => ({
   bg: isDarkMode ? 'bg-neutral-950' : 'bg-slate-50',

@@ -92,6 +92,7 @@ import {
   ICON_SOLID_STYLE,
   ICON_HEADER_STYLE,
   getThemeClasses,
+  getPercentColor,
 } from './lib/theme';
 import type {
   StudySession,
@@ -1690,9 +1691,8 @@ export default function App() {
                   className='text-[11px] font-bold animate-in fade-in slide-in-from-bottom-1 duration-300 flex items-center gap-1'
                 >
                   <span
-                    className={`flex items-center gap-1 ${
-                      stats.goalDeviation >= 0 ? 'text-green-500' : 'text-red-500'
-                    }`}
+                    className='flex items-center gap-1'
+                    style={{ color: getPercentColor(stats.goalDeviation) }}
                   >
                     {stats.goalDeviation >= 0 ? '+' : '-'}
                     {formatDurationDetailed(stats.goalDeltaMinutes)}
@@ -1748,11 +1748,8 @@ export default function App() {
                   )}
                 </div>
                 <div
-                  className={`absolute top-4 right-4 text-xs font-bold flex items-center gap-1 ${
-                    stats.goalPercentage >= 100
-                      ? 'text-green-500'
-                      : 'text-red-500'
-                  }`}
+                  className='absolute top-4 right-4 text-xs font-bold flex items-center gap-1'
+                  style={{ color: getPercentColor(stats.goalPercentage - 100) }}
                 >
                   {stats.goalPercentage}%
                 </div>
@@ -2386,11 +2383,8 @@ export default function App() {
                       </p>
                       {/* Percentage Moved Next to Title - INLINE */}
                       <div
-                        className={`text-xs font-bold ${
-                          selectedDayPercentage >= 100
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                        }`}
+                        className='text-xs font-bold'
+                        style={{ color: getPercentColor(selectedDayPercentage - 100) }}
                       >
                         {selectedDayPercentage}%
                       </div>

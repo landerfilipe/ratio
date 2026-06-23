@@ -41,7 +41,7 @@ import {
   AlignLeft,
 } from 'lucide-react';
 
-import { COLORS, getHeatmapColors, ICON_SOLID_STYLE } from '../lib/theme';
+import { COLORS, getHeatmapColors, ICON_SOLID_STYLE, getPercentColor } from '../lib/theme';
 import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/helpers';
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 
@@ -208,9 +208,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   const renderRemainingStatus = (minutes: number, percent: number) => (
     <div className='text-[11px] font-bold flex items-center justify-end gap-1'>
       <span
-        className={`flex items-center gap-1 ${
-          percent >= 0 ? 'text-green-500' : 'text-red-500'
-        }`}
+        className='flex items-center gap-1'
+        style={{ color: getPercentColor(percent) }}
       >
         {percent >= 0 ? '+' : '-'}
         {formatDurationDetailed(minutes)}
@@ -291,7 +290,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   </td>
                   <td
                     className='py-2.5 text-right font-bold flex items-center justify-end gap-1'
-                    style={{ color: row.percent !== null && row.percent >= 0 ? '#22c55e' : '#ef4444' }}
+                    style={{ color: row.percent !== null ? getPercentColor(row.percent) : undefined }}
                   >
                     {row.percent === null ? 'N/A' : `${row.percent > 0 ? '+' : ''}${row.percent}%`}
                   </td>
