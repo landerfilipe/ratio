@@ -46,13 +46,12 @@ import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/he
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 
 const STATISTICS_RANGE_TABS: { range: TimeRange; label: string }[] = [
-  { range: '7_days',    label: '7d' },
-  { range: '30_days',   label: '30d' },
-  { range: '90_days',   label: '90d' },
-  { range: '180_days',  label: '180d' },
-  { range: '360_days',  label: '360d' },
-  { range: '720_days',  label: '720d' },
-  { range: '1080_days', label: '1080d' },
+  { range: '7_days',   label: '7d' },
+  { range: '14_days',  label: '14d' },
+  { range: '30_days',  label: '30d' },
+  { range: '90_days',  label: '90d' },
+  { range: '180_days', label: '180d' },
+  { range: '360_days', label: '360d' },
 ];
 
 // Tipos para os dados (espelhando App.tsx stats)

@@ -72,8 +72,6 @@ export const getRangeLabel = (range: string): string => {
     case '90_days': return '90d';
     case '180_days': return '180d';
     case '360_days': return '360d';
-    case '720_days': return '720d';
-    case '1080_days': return '1080d';
-    default: return 'Período';
+default: return 'Período';
   }
 };

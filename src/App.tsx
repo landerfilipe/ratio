@@ -108,26 +108,24 @@ import { LoginSkeleton } from './components/Skeletons';
 const DASHBOARD_PERIODS: { range: TimeRange; label: string }[] = [
   { range: 'day',      label: 'Hoje' },
   { range: '7_days',   label: '7d' },
+  { range: '14_days',  label: '14d' },
   { range: '30_days',  label: '30d' },
   { range: '90_days',  label: '90d' },
   { range: '180_days', label: '180d' },
   { range: '360_days', label: '360d' },
-  { range: '720_days', label: '720d' },
-  { range: '1080_days', label: '1080d' },
 ];
 
 const STATISTICS_PERIODS: {
   days: number;
   label: string;
 }[] = [
-  { days: 1,    label: 'Hoje' },
-  { days: 7,    label: '7d' },
-  { days: 30,   label: '30d' },
-  { days: 90,   label: '90d' },
-  { days: 180,  label: '180d' },
-  { days: 360,  label: '360d' },
-  { days: 720,  label: '720d' },
-  { days: 1080, label: '1080d' },
+  { days: 1,   label: 'Hoje' },
+  { days: 7,   label: '7d' },
+  { days: 14,  label: '14d' },
+  { days: 30,  label: '30d' },
+  { days: 90,  label: '90d' },
+  { days: 180, label: '180d' },
+  { days: 360, label: '360d' },
 ];
 
 const getPeriodGoalMinutes = (

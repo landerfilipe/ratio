@@ -26,9 +26,7 @@ export type TimeRange =
   | '30_days'
   | '90_days'
   | '180_days'
-  | '360_days'
-  | '720_days'
-  | '1080_days';
+  | '360_days';
 
 export type SortOrder = 'desc' | 'asc';
 
