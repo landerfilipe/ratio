@@ -39,7 +39,7 @@ export const getPercentColor = (delta: number): string => {
   if (delta <= -50) return '#e03535';
   if (delta <= -25) return '#f08020';
   if (delta < 0)    return '#EAB308';
-  if (delta < 33)   return '#3dc455';
+  if (delta < 50)   return '#3dc455';
   return '#1ac8c5';
 };
 
