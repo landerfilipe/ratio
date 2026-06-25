@@ -41,7 +41,7 @@ import {
   AlignLeft,
 } from 'lucide-react';
 
-import { COLORS, getHeatmapColors, ICON_SOLID_STYLE, getPercentColor } from '../lib/theme';
+import { COLORS, getHeatmapColors, ICON_SOLID_STYLE, getPercentStyle } from '../lib/theme';
 import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/helpers';
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 
@@ -206,10 +206,10 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
   const CustomRadarTick = createCustomRadarTick(isDarkMode);
 
   const renderRemainingStatus = (minutes: number, percent: number) => (
-    <div className='text-[11px] font-bold flex items-center justify-end gap-1'>
+    <div className='text-[11.5px] font-bold flex items-center justify-end gap-1'>
       <span
         className='flex items-center gap-1'
-        style={{ color: getPercentColor(percent) }}
+        style={getPercentStyle(percent)}
       >
         {percent >= 0 ? '+' : '-'}
         {formatDurationDetailed(minutes)}
@@ -290,7 +290,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   </td>
                   <td
                     className='py-2.5 text-right font-bold flex items-center justify-end gap-1'
-                    style={{ color: row.percent !== null ? getPercentColor(row.percent) : undefined }}
+                    style={row.percent !== null ? getPercentStyle(row.percent) : undefined}
                   >
                     {row.percent === null ? 'N/A' : `${row.percent > 0 ? '+' : ''}${row.percent}%`}
                   </td>

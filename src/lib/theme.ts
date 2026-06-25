@@ -1,4 +1,5 @@
 // --- Theme Constants (isolado para reuso entre views) ---
+import type React from 'react';
 
 // Cores do tema
 export const COLORS = [
@@ -35,12 +36,16 @@ export const ICON_HEADER_STYLE = { stroke: 'url(#gold-gradient)' };
 
 // Escala de cor por Δ% em relação à meta
 export const getPercentColor = (delta: number): string => {
-  if (delta <= -50) return '#ef1515';
-  if (delta <= -25) return '#f38908';
-  if (delta < 0)    return '#f0e409';
-  if (delta < 33)   return '#1cd460';
-  return '#15ee2e';
+  if (delta <= -50) return '#e03535';
+  if (delta <= -25) return '#f08020';
+  if (delta < 0)    return '#EAB308';
+  if (delta < 33)   return '#3dc455';
+  return '#1ac8c5';
 };
+
+export const getPercentStyle = (delta: number): React.CSSProperties => ({
+  color: getPercentColor(delta),
+});
 
 // Função para gerar classes de tema
 export const getThemeClasses = (isDarkMode: boolean) => ({
