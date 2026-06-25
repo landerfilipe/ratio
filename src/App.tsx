@@ -106,24 +106,28 @@ import type {
 import { LoginSkeleton } from './components/Skeletons';
 
 const DASHBOARD_PERIODS: { range: TimeRange; label: string }[] = [
-  { range: 'day', label: 'Hoje' },
-  { range: '7_days', label: 'Semana' },
-  { range: '30_days', label: 'Mês' },
-  { range: '90_days', label: 'Trimestre' },
-  { range: '180_days', label: 'Semestre' },
-  { range: '360_days', label: 'Ano' },
+  { range: 'day',      label: 'Hoje' },
+  { range: '7_days',   label: '7d' },
+  { range: '30_days',  label: '30d' },
+  { range: '90_days',  label: '90d' },
+  { range: '180_days', label: '180d' },
+  { range: '360_days', label: '360d' },
+  { range: '720_days', label: '720d' },
+  { range: '1080_days', label: '1080d' },
 ];
 
 const STATISTICS_PERIODS: {
   days: number;
   label: string;
 }[] = [
-  { days: 1, label: 'Hoje' },
-  { days: 7, label: 'Semana' },
-  { days: 30, label: 'Mês' },
-  { days: 90, label: 'Trimestre' },
-  { days: 180, label: 'Semestre' },
-  { days: 360, label: 'Ano' },
+  { days: 1,    label: 'Hoje' },
+  { days: 7,    label: '7d' },
+  { days: 30,   label: '30d' },
+  { days: 90,   label: '90d' },
+  { days: 180,  label: '180d' },
+  { days: 360,  label: '360d' },
+  { days: 720,  label: '720d' },
+  { days: 1080, label: '1080d' },
 ];
 
 const getPeriodGoalMinutes = (
@@ -183,6 +187,7 @@ export default function App() {
   const [editDate, setEditDate] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
   const [applySubjectToAll, setApplySubjectToAll] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
 
   // Timer State with Persistence
   const [timerMode, setTimerMode] = useState<TimerMode>(() => {
@@ -853,11 +858,10 @@ export default function App() {
         return sDate.toDateString() === now.toDateString();
       const days = getDaysFromRange(timeRange);
       const rangeStart = new Date(todayStart);
-      rangeStart.setDate(rangeStart.getDate() - days + 1);
-      const rangeEnd = new Date(todayStart);
-      rangeEnd.setDate(rangeEnd.getDate() + 1);
+      rangeStart.setDate(rangeStart.getDate() - days);
       const sTime = new Date(s.date).getTime();
-      return sTime >= rangeStart.getTime() && sTime < rangeEnd.getTime();
+      // exclui hoje: rangeEnd = todayStart (exclusive)
+      return sTime >= rangeStart.getTime() && sTime < todayStart.getTime();
     });
     const rangeMinutes = filteredSessions.reduce(
       (acc, curr) => acc + curr.durationMinutes,
@@ -1196,11 +1200,17 @@ export default function App() {
     });
 
     // Main header comparison
-    const compDays = timeRange === 'day' ? 1 : getDaysFromRange(timeRange);
-    const rangeEnd = new Date(todayStart);
-    const rangeStart = new Date(todayStart);
-    if (timeRange !== 'day')
-      rangeStart.setDate(rangeStart.getDate() - compDays + 1);
+    const compDays = getDaysFromRange(timeRange);
+    let rangeEnd: Date, rangeStart: Date;
+    if (timeRange === 'day') {
+      rangeEnd = new Date(todayStart);
+      rangeStart = new Date(todayStart);
+    } else {
+      rangeEnd = new Date(todayStart);
+      rangeEnd.setDate(rangeEnd.getDate() - 1); // ontem
+      rangeStart = new Date(todayStart);
+      rangeStart.setDate(rangeStart.getDate() - compDays); // compDays antes de hoje
+    }
 
     const prevRangeEnd = new Date(rangeStart);
     prevRangeEnd.setDate(prevRangeEnd.getDate() - 1);
@@ -2466,7 +2476,27 @@ export default function App() {
                   isDarkMode ? 'divide-neutral-800' : 'divide-slate-100'
                 }`}
               >
-                {sessions.map((session) => (
+                <div className='p-3'>
+                  <input
+                    type='text'
+                    placeholder='Buscar disciplina...'
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                    className={`w-full rounded-xl border px-3 py-2 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                  />
+                </div>
+                {sessions.filter((s) =>
+                  s.subject.toLowerCase().includes(historySearch.toLowerCase())
+                ).length === 0 && historySearch ? (
+                  <div className={`p-8 text-center text-sm ${THEME.textMuted}`}>
+                    Nenhuma sessão encontrada para "{historySearch}".
+                  </div>
+                ) : null}
+                {sessions
+                  .filter((s) =>
+                    s.subject.toLowerCase().includes(historySearch.toLowerCase())
+                  )
+                  .map((session) => (
                   <div
                     key={session.id}
                     className={`p-4 transition group ${

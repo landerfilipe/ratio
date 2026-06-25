@@ -62,24 +62,18 @@ export const getDaysFromRange = (range: string): number => {
   return parseInt(range.split('_')[0]);
 };
 
-// Get range label in Portuguese
+// Get range label
 export const getRangeLabel = (range: string): string => {
   switch (range) {
-    case 'day':
-      return 'Hoje';
-    case '7_days':
-      return '7 Dias';
-    case '14_days':
-      return '14 Dias';
-    case '30_days':
-      return '30 Dias';
-    case '90_days':
-      return '90 Dias';
-    case '180_days':
-      return '180 Dias';
-    case '360_days':
-      return '360 Dias';
-    default:
-      return 'Período';
+    case 'day':    return 'Hoje';
+    case '7_days': return '7d';
+    case '14_days': return '14d';
+    case '30_days': return '30d';
+    case '90_days': return '90d';
+    case '180_days': return '180d';
+    case '360_days': return '360d';
+    case '720_days': return '720d';
+    case '1080_days': return '1080d';
+    default: return 'Período';
   }
 };

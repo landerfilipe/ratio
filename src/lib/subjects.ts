@@ -10,5 +10,4 @@ export const FIXED_SUBJECTS = [
    'Provas e Carreira',
    'Psicologia',
    'Tecnologia',
-   'Engenharia'
 ].sort();
