@@ -35,11 +35,11 @@ export const ICON_HEADER_STYLE = { stroke: 'url(#gold-gradient)' };
 
 // Escala de cor por Δ% em relação à meta
 export const getPercentColor = (delta: number): string => {
-  if (delta <= -50) return '#dc2626';
-  if (delta <= -25) return '#f97316';
-  if (delta < 0)    return '#eab308';
-  if (delta < 33)   return '#22c55e';
-  return '#4ade80';
+  if (delta <= -50) return '#ef1515';
+  if (delta <= -25) return '#f38908';
+  if (delta < 0)    return '#f0e409';
+  if (delta < 33)   return '#1cd460';
+  return '#15ee2e';
 };
 
 // Função para gerar classes de tema
