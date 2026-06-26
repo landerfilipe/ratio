@@ -1004,8 +1004,9 @@ export default function App() {
       REFERENCE_MINUTES_PER_DAY
     );
     const lineMap = new Map<string, number>();
+    // Exclui hoje: começa lineDaysLimit dias atrás, termina em ontem
     const lineStartDate = new Date(todayStart);
-    lineStartDate.setDate(lineStartDate.getDate() - (lineDaysLimit - 1));
+    lineStartDate.setDate(lineStartDate.getDate() - lineDaysLimit);
     for (let i = 0; i < lineDaysLimit; i++) {
       const d = new Date(lineStartDate);
       d.setDate(d.getDate() + i);
@@ -1085,9 +1086,10 @@ export default function App() {
     const rhythmDays = getDaysFromRange(dailyRhythmRange);
     const rhythmMap = new Map<string, number>();
     const maWindow = 7;
+    // Exclui hoje: termina em ontem
     const rhythmStart = new Date(todayStart);
     rhythmStart.setDate(rhythmStart.getDate() - (rhythmDays + maWindow));
-    for (let i = 0; i < rhythmDays + maWindow + 1; i++) {
+    for (let i = 0; i < rhythmDays + maWindow; i++) {
       const d = new Date(rhythmStart);
       d.setDate(d.getDate() + i);
       // Use local date components to build key (avoids UTC shift)
@@ -1145,9 +1147,11 @@ export default function App() {
               100
           )
         : 0;
+    // Exclui hoje: end = ontem, start = todayStart - rhythmDays
     const rhythmPeriodEnd = new Date(todayStart);
+    rhythmPeriodEnd.setDate(rhythmPeriodEnd.getDate() - 1);
     const rhythmPeriodStart = new Date(todayStart);
-    rhythmPeriodStart.setDate(rhythmPeriodStart.getDate() - rhythmDays + 1);
+    rhythmPeriodStart.setDate(rhythmPeriodStart.getDate() - rhythmDays);
     const rhythmPeriodMinutes = calcMinutesInPeriod(
       rhythmPeriodStart,
       rhythmPeriodEnd
@@ -1173,7 +1177,13 @@ export default function App() {
       const { days } = period;
       const endCurrent = new Date(todayStart);
       const startCurrent = new Date(todayStart);
-      startCurrent.setDate(startCurrent.getDate() - days + 1);
+      if (days === 1) {
+        // "Hoje" — inclui hoje
+      } else {
+        // Exclui hoje: end = ontem, start = todayStart - days
+        endCurrent.setDate(endCurrent.getDate() - 1);
+        startCurrent.setDate(startCurrent.getDate() - days);
+      }
 
       const currentMins = calcMinutesInPeriod(startCurrent, endCurrent);
       const metaMins = getPeriodGoalMinutes(days, REFERENCE_MINUTES_PER_DAY);
