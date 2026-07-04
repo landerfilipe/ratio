@@ -10,7 +10,6 @@ import {
   signInWithPopup,
   linkWithPopup,
   GoogleAuthProvider,
-  signInAnonymously,
   onAuthStateChanged,
   signOut,
 } from 'firebase/auth';
@@ -322,31 +321,13 @@ export default function App() {
     };
   }, [timerIsActive, timerMode]);
 
-  // AUTENTICAÇÃO: Google + Anônimo (Fallback) + Persistência
+  // AUTENTICAÇÃO: somente Google (o provedor anônimo está desativado no
+  // projeto; sem sessão, o app mostra a tela de login).
   useEffect(() => {
-    // Garante que a persistência é Local
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        setUser(u);
-        setLoading(false);
-        setAuthError(null);
-      } else {
-        setUser(null);
-        // Tenta login anônimo silenciosamente
-        signInAnonymously(auth)
-          .then(() => {
-            // Sucesso, o onAuthStateChanged vai disparar novamente com o usuário
-          })
-          .catch((error) => {
-            console.warn('Login anônimo:', error.code);
-            // Só paramos o loading SE o login anônimo falhar.
-            // Se o login anônimo for bem sucedido, o loading é tratado no 'if (u)'
-            setLoading(false);
-            if (error.code === 'auth/admin-restricted-operation') {
-              setAuthError("Erro: Ative 'Anônimo' no Console.");
-            }
-          });
-      }
+      setUser(u);
+      setLoading(false);
+      if (u) setAuthError(null);
     });
     return () => unsubscribe();
   }, []);
