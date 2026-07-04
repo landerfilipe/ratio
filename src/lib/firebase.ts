@@ -1,7 +1,7 @@
 // --- Firebase Configuration (isolado para melhor tree-shaking) ---
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBnlxuas5xmymrPxfhpazArQ0HbtpmGfgM',
@@ -15,18 +15,10 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Persistência offline via cache IndexedDB (substitui a API deprecada
+// enableIndexedDbPersistence; mesmo comportamento single-tab, com fallback
+// automático para cache em memória quando o IndexedDB não está disponível).
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache(),
+});
 export const appId = 'ratio-5bfb8';
-
-// Ativar Persistência Offline (Cache Inteligente)
-try {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Persistência falhou: Múltiplas abas abertas.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Persistência não suportada neste navegador.');
-    }
-  });
-} catch {
-  console.log('Persistência já habilitada ou erro ao habilitar');
-}

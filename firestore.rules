@@ -34,8 +34,10 @@ service cloud.firestore {
         request.resource.data.date is string &&
         request.resource.data.date.size() >= 10 &&
         request.resource.data.date.size() <= 40 &&
+        request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T.*') &&
         request.resource.data.timestamp is int &&
-        request.resource.data.timestamp > 0;
+        request.resource.data.timestamp > 0 &&
+        request.resource.data.timestamp <= request.time.toMillis() + 300000;
     }
 
     function isValidProfile() {
@@ -54,6 +56,9 @@ service cloud.firestore {
         optionalString(request.resource.data, 'location', 120) &&
         optionalString(request.resource.data, 'bio', 500) &&
         optionalString(request.resource.data, 'photoUrl', 500) &&
+        (!('photoUrl' in request.resource.data) ||
+          request.resource.data.photoUrl == '' ||
+          request.resource.data.photoUrl.matches('https://.*')) &&
         optionalNumberInRange(
           request.resource.data,
           'dailyGoalMinutes',

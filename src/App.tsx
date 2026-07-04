@@ -215,6 +215,13 @@ export default function App() {
 
   const [timerIsActive, setTimerIsActive] = useState(false); // Always paused on load
 
+  // Espelho de timerSeconds para o efeito do timer ler o valor no instante do
+  // "play" sem precisar de timerSeconds nas dependências.
+  const timerSecondsRef = useRef(timerSeconds);
+  useEffect(() => {
+    timerSecondsRef.current = timerSeconds;
+  }, [timerSeconds]);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -232,16 +239,23 @@ export default function App() {
   }, []);
 
   // Save Timer State to LocalStorage
+  // Separado em dois efeitos: os segundos mudam a cada tick, mas modo e
+  // duração inicial só mudam por interação — evita 2 gravações extras/segundo.
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('ratio_timer_seconds', timerSeconds.toString());
+    }
+  }, [timerSeconds]);
+
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
       localStorage.setItem('ratio_timer_mode', timerMode);
       localStorage.setItem(
         'ratio_timer_initial',
         countdownInitialMinutes.toString()
       );
     }
-  }, [timerSeconds, timerMode, countdownInitialMinutes]);
+  }, [timerMode, countdownInitialMinutes]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -271,31 +285,42 @@ export default function App() {
     };
   }, [isDarkMode]);
 
-  // Timer Interval Logic - Tipagem correta para NodeJS.Timeout
+  // Timer Interval Logic
+  // Contagem baseada em timestamp (âncora no momento do play): o tempo exibido
+  // é derivado do relógio real, então o timer não "perde" segundos quando o
+  // navegador/PWA suspende timers em background. Ao voltar para a aba,
+  // visibilitychange força a sincronização imediata.
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (timerIsActive) {
-      interval = setInterval(() => {
-        setTimerSeconds((prev) => {
-          if (timerMode === 'countdown') {
-            if (prev <= 0) {
-              setTimerIsActive(false);
-              triggerHaptic();
-              return 0;
-            }
-            return prev - 1;
-          } else {
-            return prev + 1;
-          }
-        });
-      }, 1000);
-    } else if (!timerIsActive && timerSeconds !== 0 && interval) {
-      clearInterval(interval);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    if (!timerIsActive) return;
+    const anchorTime = Date.now();
+    const anchorSeconds = timerSecondsRef.current;
+
+    const tick = () => {
+      const elapsed = Math.round((Date.now() - anchorTime) / 1000);
+      if (timerMode === 'countdown') {
+        const next = anchorSeconds - elapsed;
+        if (next <= 0) {
+          setTimerIsActive(false);
+          triggerHaptic();
+          setTimerSeconds(0);
+          return;
+        }
+        setTimerSeconds(next);
+      } else {
+        setTimerSeconds(anchorSeconds + elapsed);
+      }
     };
-  }, [timerIsActive, timerSeconds, timerMode]);
+
+    const interval = setInterval(tick, 1000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [timerIsActive, timerMode]);
 
   // AUTENTICAÇÃO: Google + Anônimo (Fallback) + Persistência
   useEffect(() => {
@@ -678,8 +703,11 @@ export default function App() {
 
         if (applySubjectToAll && editOriginalSubject !== exactMatch) {
           const batch = writeBatch(db);
+          // Exclui a própria sessão editada: ela já recebe o update completo
+          // abaixo — evita gravar o mesmo documento duas vezes no batch.
           const matchingSessions = sessions.filter(
-            (session) => session.subject === editOriginalSubject
+            (session) =>
+              session.subject === editOriginalSubject && session.id !== id
           );
 
           matchingSessions.forEach((session) => {
@@ -1387,14 +1415,30 @@ export default function App() {
     return days;
   };
 
-  const selectedDaySessions = sessions.filter(
-    (s) =>
-      new Date(s.date).toDateString() === selectedCalendarDate.toDateString()
+  // Memoizado: sem isso o filtro rodava em todo render do App
+  // (inclusive a cada segundo do timer), com new Date() por sessão.
+  const selectedDaySessions = useMemo(
+    () =>
+      sessions.filter(
+        (s) =>
+          new Date(s.date).toDateString() ===
+          selectedCalendarDate.toDateString()
+      ),
+    [sessions, selectedCalendarDate]
   );
-  const selectedDayTotal = selectedDaySessions.reduce(
-    (acc, curr) => acc + curr.durationMinutes,
-    0
+  const selectedDayTotal = useMemo(
+    () =>
+      selectedDaySessions.reduce((acc, curr) => acc + curr.durationMinutes, 0),
+    [selectedDaySessions]
   );
+
+  // Filtro do histórico calculado uma única vez por mudança de busca/sessões
+  // (antes era executado duas vezes por render dentro do JSX).
+  const filteredHistorySessions = useMemo(() => {
+    const term = historySearch.toLowerCase();
+    if (!term) return sessions;
+    return sessions.filter((s) => s.subject.toLowerCase().includes(term));
+  }, [sessions, historySearch]);
   const dailyGoal = profile.dailyGoalMinutes || 180;
   const selectedDayPercentage =
     dailyGoal > 0 ? Math.round((selectedDayTotal / dailyGoal) * 100) : 0;
@@ -1456,6 +1500,7 @@ export default function App() {
           </p>
           <button
             onClick={handleGoogleLogin}
+            aria-label='Entrar com Google'
             className={`w-full py-4 px-4 rounded-xl flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-lg ${
               isDarkMode
                 ? 'bg-white hover:bg-neutral-200'
@@ -2493,18 +2538,12 @@ export default function App() {
                     className={`w-full rounded-xl border px-3 py-2 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
                   />
                 </div>
-                {sessions.filter((s) =>
-                  s.subject.toLowerCase().includes(historySearch.toLowerCase())
-                ).length === 0 && historySearch ? (
+                {filteredHistorySessions.length === 0 && historySearch ? (
                   <div className={`p-8 text-center text-sm ${THEME.textMuted}`}>
                     Nenhuma sessão encontrada para "{historySearch}".
                   </div>
                 ) : null}
-                {sessions
-                  .filter((s) =>
-                    s.subject.toLowerCase().includes(historySearch.toLowerCase())
-                  )
-                  .map((session) => (
+                {filteredHistorySessions.map((session) => (
                   <div
                     key={session.id}
                     className={`p-4 transition group ${
