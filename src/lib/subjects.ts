@@ -1,5 +1,6 @@
 // --- Lista Fixa de Disciplinas ---
 export const FIXED_SUBJECTS = [
+   'Bíblia',
    'Ciência',
    'Economia',
    'Epistemologia',
