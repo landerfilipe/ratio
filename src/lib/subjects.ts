@@ -3,7 +3,7 @@ export const FIXED_SUBJECTS = [
    'Bíblia',
    'Ciência',
    'Economia',
-   'Engenharia [IA]',
+   'Engenharia (IA)',
    'Epistemologia',
    'Estatística',
    'Estratégia',
