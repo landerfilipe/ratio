@@ -7,7 +7,7 @@ export const FIXED_SUBJECTS = [
    'Epistemologia',
    'Estatística',
    'Estratégia',
-   'Letras',
+   'Linguagem',
    'Matemática',
    'Provas e Carreira',
    'Psicologia',
