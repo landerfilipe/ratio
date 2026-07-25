@@ -77,7 +77,7 @@ const StatisticsSkeleton = ({ isDarkMode }: { isDarkMode: boolean }) => (
 
 // --- Imports from lib/ modules (Code Splitting) ---
 import { auth, db, appId } from './lib/firebase';
-import { canonicalizeSubject, FIXED_SUBJECTS } from './lib/subjects';
+import { FIXED_SUBJECTS } from './lib/subjects';
 import { SubjectIcon } from './components/SubjectIcon';
 import {
   formatDurationDetailed,
@@ -382,7 +382,7 @@ export default function App() {
           if (dateStr && !isNaN(new Date(dateStr).getTime())) {
             loaded.push({
               id: doc.id,
-              subject: canonicalizeSubject(data.subject || 'Outras'),
+              subject: data.subject || 'Outras',
               durationMinutes: data.durationMinutes || 0,
               date: dateStr,
               timestamp: data.timestamp || new Date(dateStr).getTime(),
@@ -2692,7 +2692,7 @@ export default function App() {
                       <div className='flex items-center gap-2'>
                         <SubjectIcon
                           subject={session.subject}
-                          className='h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                          className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
                           color='#0a0a0a'
                         />
                         <div>
@@ -2875,7 +2875,7 @@ export default function App() {
                         <div className='flex flex-1 min-w-0 items-center gap-2 pr-4'>
                           <SubjectIcon
                             subject={session.subject}
-                            className='h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                            className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
                             color='#0a0a0a'
                           />
                           <div className='min-w-0'>

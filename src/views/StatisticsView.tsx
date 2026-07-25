@@ -438,7 +438,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <button
                 key={range}
                 onClick={() => { setLineChartRange(range); triggerHaptic(); }}
-                className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
+                className={`px-2 py-1 rounded-full transition font-bold whitespace-nowrap ${
                   lineChartRange === range
                     ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                     : `${THEME.textMuted}`
@@ -525,7 +525,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <button
                 key={range}
                 onClick={() => { setDailyRhythmRange(range); triggerHaptic(); }}
-                className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
+                className={`px-2 py-1 rounded-full transition font-bold whitespace-nowrap ${
                   dailyRhythmRange === range
                     ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                     : `${THEME.textMuted}`
@@ -593,7 +593,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
           <div className={`flex p-0.5 gap-0.5 rounded-lg flex-shrink-0 ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
             <button
               onClick={() => { setChartType('pie'); triggerHaptic(); }}
-              className={`p-1.5 rounded ${
+              className={`p-1.5 rounded-full ${
                 chartType === 'pie'
                   ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                   : `${THEME.textMuted}`
@@ -603,7 +603,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
             <button
               onClick={() => { setChartType('radar'); triggerHaptic(); }}
-              className={`p-1.5 rounded ${
+              className={`p-1.5 rounded-full ${
                 chartType === 'radar'
                   ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                   : `${THEME.textMuted}`
@@ -613,7 +613,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
             <button
               onClick={() => { setChartType('bar'); triggerHaptic(); }}
-              className={`p-1.5 rounded ${
+              className={`p-1.5 rounded-full ${
                 chartType === 'bar'
                   ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
                   : `${THEME.textMuted}`
