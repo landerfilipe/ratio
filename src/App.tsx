@@ -52,6 +52,8 @@ import {
   Pause,
   RotateCcw,
   Hourglass,
+  Flame,
+  ChevronUp,
 } from 'lucide-react';
 
 // --- LAZY LOADING: StatisticsView contém todo o Recharts (~400KB) ---
@@ -132,6 +134,42 @@ const getPeriodGoalMinutes = (
   dailyGoalMinutes = 180
 ): number => dailyGoalMinutes * days;
 
+const getLocalDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getRadarPoints = (values: number[], radius = 54): string =>
+  Array.from({ length: values.length }, (_, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / values.length;
+    const value = Math.max(0, Math.min(values[index] || 0, 1));
+    const pointRadius = radius * value;
+    const x = 80 + Math.cos(angle) * pointRadius;
+    const y = 80 + Math.sin(angle) * pointRadius;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+const getSmoothSvgPath = (points: { x: number; y: number }[]): string => {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+
+    const previousPrevious = points[Math.max(index - 2, 0)];
+    const previous = points[index - 1];
+    const next = points[Math.min(index + 1, points.length - 1)];
+    const controlPointOneX = previous.x + (point.x - previousPrevious.x) / 6;
+    const controlPointOneY = previous.y + (point.y - previousPrevious.y) / 6;
+    const controlPointTwoX = point.x - (next.x - previous.x) / 6;
+    const controlPointTwoY = point.y - (next.y - previous.y) / 6;
+
+    return `${path} C ${controlPointOneX.toFixed(1)} ${controlPointOneY.toFixed(1)}, ${controlPointTwoX.toFixed(1)} ${controlPointTwoY.toFixed(1)}, ${point.x} ${point.y}`;
+  }, '');
+};
+
 export default function App() {
   const isDarkMode = true;
 
@@ -160,6 +198,7 @@ export default function App() {
   const [tempGoal, setTempGoal] = useState('180');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isHomeFormOpen, setIsHomeFormOpen] = useState(true);
   const [view, setView] = useState<ViewState>('home');
   const [chartType, setChartType] = useState<'pie' | 'radar' | 'bar'>('pie');
 
@@ -1324,6 +1363,73 @@ export default function App() {
     profile.dailyGoalMinutes,
   ]);
 
+  const homeInsights = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const subjectMinutes = new Map<string, number>();
+    sessions.forEach((session) => {
+      subjectMinutes.set(
+        session.subject,
+        (subjectMinutes.get(session.subject) || 0) + session.durationMinutes
+      );
+    });
+    const chartSortedSubjects = Array.from(
+      subjectMinutes,
+      ([name, minutes]) => ({ name, minutes })
+    ).sort((a, b) => b.minutes - a.minutes);
+    const radarClockwiseRankOrder = [1, 5, 9, 4, 8, 12, 2, 6, 10, 3, 7, 11];
+    const orderedSubjects = radarClockwiseRankOrder
+      .map((rank) => chartSortedSubjects[rank - 1])
+      .filter((subject): subject is (typeof chartSortedSubjects)[number] =>
+        Boolean(subject)
+      );
+    const subjects =
+      orderedSubjects.length > 0 && orderedSubjects.length < 3
+        ? [
+            ...orderedSubjects,
+            ...Array.from({ length: 3 - orderedSubjects.length }, () => ({
+              name: '',
+              minutes: 0,
+            })),
+          ]
+        : orderedSubjects;
+
+    const minutesByDay = new Map<string, number>();
+    sessions.forEach((session) => {
+      const key = getLocalDateKey(new Date(session.date));
+      minutesByDay.set(key, (minutesByDay.get(key) || 0) + session.durationMinutes);
+    });
+
+    const streakCursor = new Date(todayStart);
+    if (!minutesByDay.has(getLocalDateKey(streakCursor))) {
+      streakCursor.setDate(streakCursor.getDate() - 1);
+    }
+    let streak = 0;
+    while (minutesByDay.has(getLocalDateKey(streakCursor))) {
+      streak += 1;
+      streakCursor.setDate(streakCursor.getDate() - 1);
+    }
+
+    const recentMinutes = Array.from({ length: 8 }, (_, index) => {
+      const date = new Date(todayStart);
+      date.setDate(date.getDate() - (7 - index));
+      return minutesByDay.get(getLocalDateKey(date)) || 0;
+    });
+    const recentMax = Math.max(...recentMinutes, 1);
+    const sparklineCoordinates = recentMinutes.map((minutes, index) => {
+        const x = (index / (recentMinutes.length - 1)) * 120;
+        const y = 58 - (minutes / recentMax) * 48;
+        return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
+      });
+    const sparklinePath = getSmoothSvgPath(sparklineCoordinates);
+
+    return { subjects, streak, sparklinePath };
+  }, [sessions]);
+
   // --- Theme Colors (imported from lib/theme.ts) ---
   const THEME = getThemeClasses(isDarkMode);
 
@@ -1564,30 +1670,46 @@ export default function App() {
       {/* Header - HIDDEN IN ZEN MODE */}
       {!isZenMode && (
         <header
-          className={`${
-            isDarkMode
-              ? 'bg-neutral-950/95 border-b border-neutral-800'
-              : 'bg-white/95 border-b border-slate-200'
-          } backdrop-blur-sm p-4 sticky top-0 z-20 transition-colors duration-200 ease-in-out`}
+          className={
+            view === 'home'
+              ? 'ratio-home-header'
+              : `${
+                  isDarkMode
+                    ? 'bg-neutral-950/95 border-b border-neutral-800'
+                    : 'bg-white/95 border-b border-slate-200'
+                } backdrop-blur-sm p-4 sticky top-0 z-20 transition-colors duration-200 ease-in-out`
+          }
         >
-          <div className='max-w-4xl mx-auto flex justify-between items-center'>
+          <div
+            className='max-w-4xl mx-auto flex justify-between items-center'
+          >
             <div className='flex items-center gap-3'>
               <Activity
-                className='h-6 w-6 animate-in fade-in slide-in-from-left-1 duration-300'
+                className={`animate-in fade-in slide-in-from-left-1 duration-300 ${
+                  view === 'home' ? 'h-9 w-9' : 'h-6 w-6'
+                }`}
                 style={ICON_HEADER_STYLE}
               />
               <div>
-                <h1 className='text-xl font-extrabold tracking-tight leading-none animate-in fade-in slide-in-from-left-1 delay-150 duration-300 fill-mode-backwards'>
+                <h1
+                  className={`font-extrabold tracking-tight leading-none animate-in fade-in slide-in-from-left-1 delay-150 duration-300 fill-mode-backwards ${
+                    view === 'home' ? 'text-2xl sm:text-3xl' : 'text-xl'
+                  }`}
+                >
                   Ratio
                 </h1>
                 <p
-                  className={`text-[9px] uppercase font-bold tracking-wider animate-in fade-in slide-in-from-left-1 delay-300 duration-300 fill-mode-backwards ${TEXT_GRADIENT}`}
+                  className={`uppercase font-bold tracking-wider animate-in fade-in slide-in-from-left-1 delay-300 duration-300 fill-mode-backwards ${TEXT_GRADIENT} ${
+                    view === 'home' ? 'text-[10px] sm:text-xs mt-1' : 'text-[9px]'
+                  }`}
                 >
-                  Evolução Calculada
+                  {view === 'home' ? 'Evolução' : 'Evolução Calculada'}
                 </p>
               </div>
             </div>
-            <div className='flex items-center gap-3 animate-in fade-in delay-500 duration-300 fill-mode-backwards'>
+            <div
+              className='flex items-center gap-3 animate-in fade-in delay-500 duration-300 fill-mode-backwards'
+            >
               <div
                 onClick={() => handleViewChange('profile')}
                 className={`w-8 h-8 rounded-full cursor-pointer shadow-sm active:scale-95 transition-transform mr-1 flex items-center justify-center ${
@@ -1637,7 +1759,9 @@ export default function App() {
       )}
 
       <main
-        className={`max-w-4xl mx-auto p-4 space-y-6 ${
+        className={`max-w-4xl mx-auto ${
+          view === 'home' ? 'px-4 pt-2 sm:px-6 sm:pt-3 space-y-7' : 'p-4 space-y-6'
+        } ${
           isZenMode
             ? 'h-screen p-0 flex flex-col justify-center overflow-y-auto'
             : ''
@@ -1645,25 +1769,18 @@ export default function App() {
       >
         {/* === HOME VIEW === */}
         {view === 'home' && (
-          <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out'>
-            <div className='flex flex-col gap-4'>
-              <div className='flex items-center gap-3'>
-                <h2 className={`text-xl font-medium ${THEME.text}`}>
-                  Olá,{' '}
-                  <span className={`font-bold ${TEXT_GRADIENT}`}>
-                    {profile.name ||
-                      user?.displayName?.split(' ')[0] ||
-                      'Estudante'}
-                  </span>
-                </h2>
-              </div>
-              <div
-                className={`${
-                  isDarkMode
-                    ? 'bg-neutral-900 border-neutral-800'
-                    : 'bg-white border-slate-200'
-                } p-1 rounded-xl border shadow-sm flex text-sm w-full overflow-x-auto gap-1 hide-scrollbar`}
-              >
+          <div className='space-y-7 animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out'>
+            <section className='space-y-5'>
+              <h2 className={`text-3xl sm:text-4xl font-light tracking-tight ${THEME.text}`}>
+                Olá,{' '}
+                <span className={`font-extrabold ${TEXT_GRADIENT}`}>
+                  {profile.name ||
+                    user?.displayName?.split(' ')[0] ||
+                    'Estudante'}
+                </span>
+              </h2>
+
+              <div className='ratio-period-switcher p-1.5 rounded-2xl border border-neutral-800 flex w-full overflow-x-auto gap-1 hide-scrollbar'>
                 {DASHBOARD_PERIODS.map(({ range, label }) => (
                   <button
                     key={range}
@@ -1671,26 +1788,24 @@ export default function App() {
                       setTimeRange(range);
                       triggerHaptic();
                     }}
-                    className={`px-3 py-2 rounded-lg whitespace-nowrap transition-all font-bold text-xs flex-shrink-0 ${
+                    className={`min-w-[58px] flex-1 px-3 py-3 rounded-xl whitespace-nowrap transition-all font-extrabold text-sm ${
                       timeRange === range
-                        ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
-                        : `${THEME.textMuted} hover:opacity-80`
+                        ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-md'
+                        : `${THEME.textMuted} hover:text-neutral-200`
                     }`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Progress Bar with Editable Goal (Goal Bar Logic SWAPPED: Now has deviation + arrows) */}
-            <div className={`${THEME.card} p-4 rounded-2xl shadow-sm border`}>
-              <div className='flex justify-between items-center mb-2'>
-                <div className='flex items-center gap-2'>
-                  <span
-                    className={`text-xs font-bold ${THEME.textMuted} uppercase flex items-center gap-1`}
-                  >
-                    <Trophy className='h-3 w-3' style={ICON_SOLID_STYLE} /> META
+            <section className={`${THEME.card} ratio-home-card p-5 sm:p-6 rounded-3xl border`}>
+              <div className='flex justify-between items-center gap-3 mb-4 max-[359px]:flex-col max-[359px]:items-start'>
+                <div className='flex items-center gap-2 min-w-0'>
+                  <Trophy className='h-5 w-5 shrink-0' style={ICON_SOLID_STYLE} />
+                  <span className={`text-base sm:text-lg font-extrabold ${THEME.textMuted} uppercase`}>
+                    Meta
                   </span>
                   {isEditingGoal ? (
                     <div className='flex items-center gap-1'>
@@ -1698,146 +1813,345 @@ export default function App() {
                         type='number'
                         value={tempGoal}
                         onChange={(e) => setTempGoal(e.target.value)}
-                        className={`w-12 text-xs p-1 rounded ${
-                          isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-                        } outline-none`}
+                        className='w-16 text-sm p-1.5 rounded-lg bg-neutral-800 border border-neutral-700 outline-none'
                         autoFocus
                       />
                       <button
                         onClick={handleUpdateGoal}
-                        className='text-green-500 hover:text-green-400'
+                        aria-label='Salvar meta'
+                        className='text-green-500 hover:text-green-400 p-1'
                       >
-                        <Check className='h-3 w-3' />
+                        <Check className='h-4 w-4' />
                       </button>
                       <button
                         onClick={() => setIsEditingGoal(false)}
-                        className='text-red-500 hover:text-red-400'
+                        aria-label='Cancelar edição da meta'
+                        className='text-red-500 hover:text-red-400 p-1'
                       >
-                        <X className='h-3 w-3' />
+                        <X className='h-4 w-4' />
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={() => {
                         setIsEditingGoal(true);
-                        setTempGoal(
-                          (profile.dailyGoalMinutes || 180).toString()
-                        );
+                        setTempGoal((profile.dailyGoalMinutes || 180).toString());
                       }}
-                      className={`text-xs font-bold hover:underline flex items-center gap-1 ${THEME.textMuted}`}
+                      className={`text-sm sm:text-base font-bold flex items-center gap-1 ${THEME.textMuted}`}
                     >
-                      ({formatGoalDuration(stats.currentGoalMinutes)}){' '}
-                      <Edit2 className='h-2 w-2' />
+                      ({formatGoalDuration(stats.currentGoalMinutes)})
+                      <Edit2 className='h-4 w-4' />
                     </button>
                   )}
                 </div>
                 <span
-                  className='text-[11.5px] font-bold animate-in fade-in slide-in-from-bottom-1 duration-300 flex items-center gap-1'
+                  className='text-sm sm:text-base font-extrabold flex items-center gap-1 whitespace-nowrap max-[359px]:self-end'
+                  style={getPercentStyle(stats.goalDeviation)}
                 >
-                  <span
-                    className='flex items-center gap-1'
-                    style={getPercentStyle(stats.goalDeviation)}
-                  >
-                    {stats.goalDeviation >= 0 ? '+' : '-'}
-                    {formatDurationDetailed(stats.goalDeltaMinutes)}
-                    <span className={THEME.textMuted}>•</span>
-                    {stats.goalDeviation > 0 ? '+' : ''}
-                    {stats.goalDeviation}%
-                    {stats.goalDeviation >= 0 ? (
-                      <ArrowUp className='h-3 w-3' />
-                    ) : (
-                      <ArrowDown className='h-3 w-3' />
-                    )}
-                  </span>
+                  {stats.goalDeviation >= 0 ? '+' : '-'}
+                  {formatDurationDetailed(stats.goalDeltaMinutes)}
+                  <span className={THEME.textMuted}>•</span>
+                  {stats.goalDeviation > 0 ? '+' : ''}
+                  {stats.goalDeviation}%
+                  {stats.goalDeviation >= 0 ? (
+                    <ArrowUp className='h-4 w-4' />
+                  ) : (
+                    <ArrowDown className='h-4 w-4' />
+                  )}
                 </span>
               </div>
-              <div
-                className={`w-full ${
-                  isDarkMode ? 'bg-neutral-800' : 'bg-slate-100'
-                } rounded-full h-2 overflow-hidden`}
-              >
-                {/* Barra com gradiente estilo mapa de calor */}
+              <div className='w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden'>
                 <div
-                  className={`h-2 rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#FDE047] to-[#EAB308] shadow-[0_0_10px_rgba(234,179,8,0.3)]`}
+                  className='h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#FDE047] to-[#EAB308] shadow-[0_0_10px_rgba(234,179,8,0.3)]'
                   style={{
                     width: `${Math.min(
-                      (stats.rangeMinutes / stats.currentGoalMinutes) * 100,
+                      stats.currentGoalMinutes > 0
+                        ? (stats.rangeMinutes / stats.currentGoalMinutes) * 100
+                        : 0,
                       100
                     )}%`,
                   }}
-                ></div>
+                />
               </div>
-            </div>
+              <p className={`mt-3 text-sm sm:text-base font-medium ${THEME.textMuted}`}>
+                {stats.goalRemainingMinutes > 0 ? (
+                  <>
+                    Faltam{' '}
+                    <strong className='font-extrabold'>
+                      {formatDurationDetailed(stats.goalRemainingMinutes)}
+                    </strong>{' '}
+                    (Você está a{' '}
+                    <strong className='font-extrabold'>
+                      {Math.max(stats.goalPercentage, 0)}%
+                    </strong>{' '}
+                    da meta).
+                  </>
+                ) : (
+                  <>
+                    Meta Alcançada! (Você está{' '}
+                    <strong className='font-extrabold'>
+                      {Math.max(stats.goalPercentage - 100, 0)}%
+                    </strong>{' '}
+                    acima da meta)
+                  </>
+                )}
+              </p>
+            </section>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <div
-                className={`${THEME.card} p-5 rounded-2xl border shadow-sm relative`}
-              >
-                <div
-                  className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
-                >
-                  <Clock className='h-4 w-4' style={ICON_SOLID_STYLE} />
-                  <span className='text-[10px] font-bold uppercase tracking-wider'>
+            <section className='grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
+              <article className={`${THEME.card} ratio-home-card min-h-40 p-5 max-[480px]:p-3 rounded-3xl border relative overflow-hidden`}>
+                <div className={`flex items-center gap-2 ${THEME.textMuted}`}>
+                  <Clock className='h-5 w-5 max-[480px]:h-4 max-[480px]:w-4' style={ICON_SOLID_STYLE} />
+                  <span className='text-sm sm:text-base max-[480px]:text-xs font-extrabold uppercase tracking-wide'>
                     {timeRange === 'day' ? getRangeLabel(timeRange) : 'Média'}
                   </span>
                 </div>
-                {/* Animação sutil no número principal */}
                 <div
-                  className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 ${THEME.text}`}
-                >
-                  {formatDurationDetailed(
-                    timeRange === 'day'
-                      ? stats.rangeMinutes
-                      : stats.avgMinutesPerSelectedDay
-                  )}
-                </div>
-                <div
-                  className='absolute top-4 right-4 text-[12.5px] font-bold flex items-center gap-1'
+                  className='absolute top-5 right-5 max-[480px]:top-3 max-[480px]:right-3 text-sm max-[480px]:text-xs font-extrabold'
                   style={getPercentStyle(stats.goalPercentage - 100)}
                 >
                   {stats.goalPercentage}%
                 </div>
-              </div>
-              <div
-                className={`${THEME.card} p-5 rounded-2xl border shadow-sm relative overflow-hidden`}
-              >
-                <div
-                  className={`flex items-center gap-2 ${THEME.textMuted} mb-2`}
-                >
-                  <TrendingUp className='h-4 w-4' style={ICON_SOLID_STYLE} />
-                  <span className='text-[10px] font-bold uppercase tracking-wider'>
+                <div className='mt-7 max-[480px]:mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-0'>
+                  <div className={`min-w-0 whitespace-nowrap text-[clamp(1.1rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
+                    {formatDurationDetailed(
+                      timeRange === 'day'
+                        ? stats.rangeMinutes
+                        : stats.avgMinutesPerSelectedDay
+                    )}
+                  </div>
+                  <svg
+                    viewBox='0 0 64 64'
+                    className='h-[clamp(3.75rem,13.5vw,5.625rem)] w-[clamp(3.75rem,13.5vw,5.625rem)] shrink-0 opacity-90'
+                    role='img'
+                    aria-label={`Progresso de ${stats.goalPercentage}% da meta`}
+                  >
+                    {[26, 18, 10].map((radius, index) => (
+                      <React.Fragment key={radius}>
+                        <circle
+                          cx='32'
+                          cy='32'
+                          r={radius}
+                          fill='none'
+                          stroke='#404040'
+                          strokeWidth={index === 0 ? 5 : 4}
+                        />
+                        <circle
+                          cx='32'
+                          cy='32'
+                          r={radius}
+                          fill='none'
+                          stroke='url(#gold-gradient)'
+                          strokeWidth={index === 0 ? 5 : 4}
+                          strokeLinecap='round'
+                          pathLength='100'
+                          strokeDasharray={`${Math.min(Math.max(stats.goalPercentage, 0), 100)} 100`}
+                          transform='rotate(-90 32 32)'
+                        />
+                      </React.Fragment>
+                    ))}
+                  </svg>
+                </div>
+              </article>
+
+              <article className={`${THEME.card} ratio-home-card min-h-40 p-5 max-[480px]:p-3 rounded-3xl border relative overflow-hidden`}>
+                <div className={`flex items-center gap-2 ${THEME.textMuted}`}>
+                  <TrendingUp className='h-5 w-5 max-[480px]:h-4 max-[480px]:w-4' style={ICON_SOLID_STYLE} />
+                  <span className='text-sm sm:text-base max-[480px]:text-xs font-extrabold uppercase tracking-wide'>
                     Total
                   </span>
                 </div>
-                {/* Animação sutil no número principal */}
-                <div
-                  className={`text-2xl font-bold animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100 ${THEME.text}`}
+                <svg
+                  viewBox='0 0 120 64'
+                  preserveAspectRatio='none'
+                  className='absolute inset-x-4 bottom-11 h-20 w-[calc(100%-2rem)] opacity-70'
+                  aria-hidden='true'
                 >
+                  <defs>
+                    <linearGradient id='home-total-line' x1='0' y1='0' x2='1' y2='0'>
+                      <stop offset='0%' stopColor='#FDE047' />
+                      <stop offset='100%' stopColor='#FACC15' />
+                    </linearGradient>
+                    <linearGradient id='home-sparkline-fill' x1='0' y1='0' x2='0' y2='1'>
+                      <stop offset='0%' stopColor='#FDE047' stopOpacity='0.65' />
+                      <stop offset='100%' stopColor='#FACC15' stopOpacity='0' />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={`${homeInsights.sparklinePath} L 120 64 L 0 64 Z`}
+                    fill='url(#home-sparkline-fill)'
+                  />
+                  <path
+                    d={homeInsights.sparklinePath}
+                    fill='none'
+                    stroke='url(#home-total-line)'
+                    strokeWidth='3'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                </svg>
+                <div className={`relative z-10 mt-8 max-[480px]:mt-6 text-4xl sm:text-5xl max-[480px]:text-[1.55rem] font-extrabold tracking-tight ${THEME.text}`}>
                   {formatDurationDetailed(
-                    timeRange === 'day'
-                      ? stats.totalMinutes
-                      : stats.rangeMinutes
+                    timeRange === 'day' ? stats.totalMinutes : stats.rangeMinutes
                   )}
                 </div>
-              </div>
-            </div>
+                <div className={`absolute z-10 bottom-4 left-5 right-5 max-[480px]:left-3 max-[480px]:right-3 text-[9px] sm:text-[11px] leading-tight ${THEME.textMuted}`}>
+                  <p>
+                    Minutos Registrados (
+                    {timeRange === 'day' ? 'Hoje' : 'Média'}):{' '}
+                    <strong className='font-extrabold'>
+                      {formatDurationDetailed(
+                        timeRange === 'day'
+                          ? stats.rangeMinutes
+                          : stats.avgMinutesPerSelectedDay
+                      )}
+                    </strong>
+                    .
+                  </p>
+                </div>
+              </article>
+            </section>
 
-            <div className={`${THEME.card} p-6 rounded-2xl border shadow-sm`}>
-              <h2
-                className={`text-lg font-bold mb-6 flex items-center gap-2 ${THEME.text}`}
+            <section className='grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
+              <article className={`${THEME.card} ratio-home-card min-h-52 p-3 rounded-3xl border overflow-hidden`}>
+                {homeInsights.subjects.length > 0 ? (
+                  <svg viewBox='0 0 160 160' className='w-full h-full' role='img' aria-label='Distribuição de tempo por disciplina'>
+                    {[0.25, 0.5, 0.75, 1].map((level) => (
+                      <polygon
+                        key={level}
+                        points={getRadarPoints(
+                          Array(homeInsights.subjects.length).fill(level)
+                        )}
+                        fill='none'
+                        stroke='#404040'
+                        strokeWidth='0.8'
+                      />
+                    ))}
+                    {homeInsights.subjects.map((subject, index) => {
+                      const angle =
+                        -Math.PI / 2 +
+                        (index * Math.PI * 2) / homeInsights.subjects.length;
+                      return (
+                        <line
+                          key={`${subject.name || 'axis'}-${index}`}
+                          x1='80'
+                          y1='80'
+                          x2={80 + Math.cos(angle) * 54}
+                          y2={80 + Math.sin(angle) * 54}
+                          stroke='#404040'
+                          strokeWidth='0.8'
+                        />
+                      );
+                    })}
+                    <polygon
+                      points={getRadarPoints(
+                        homeInsights.subjects.map(
+                          ({ minutes }) =>
+                            minutes /
+                            Math.max(
+                              ...homeInsights.subjects.map((subject) => subject.minutes),
+                              1
+                            )
+                        )
+                      )}
+                      fill='#EAB308'
+                      fillOpacity='0.28'
+                      stroke='#EAB308'
+                      strokeWidth='2'
+                    />
+                    {homeInsights.subjects.map((subject, index) => {
+                      if (!subject.name) return null;
+                      const angle =
+                        -Math.PI / 2 +
+                        (index * Math.PI * 2) / homeInsights.subjects.length;
+                      const cosine = Math.cos(angle);
+                      const labelX = 80 + cosine * 66;
+                      const labelY = 80 + Math.sin(angle) * 66;
+                      const anchor =
+                        cosine > 0.25
+                          ? 'start'
+                          : cosine < -0.25
+                            ? 'end'
+                            : 'middle';
+                      return (
+                        <text
+                          key={`${subject.name}-${index}`}
+                          x={labelX}
+                          y={labelY}
+                          textAnchor={anchor}
+                          dominantBaseline='middle'
+                          fill='#a3a3a3'
+                          fontSize={
+                            homeInsights.subjects.length > 8
+                              ? '4.5'
+                              : homeInsights.subjects.length > 5
+                                ? '5'
+                                : '6'
+                          }
+                          fontWeight='700'
+                        >
+                          {`${
+                            subject.name.length > 10
+                              ? `${subject.name.slice(0, 9)}…`
+                              : subject.name
+                          } (${formatDurationDetailed(subject.minutes)})`}
+                        </text>
+                      );
+                    })}
+                  </svg>
+                ) : (
+                  <div className='h-full flex flex-col items-center justify-center text-center px-2'>
+                    <Activity className='h-8 w-8 mb-3' style={ICON_SOLID_STYLE} />
+                    <p className={`text-sm font-bold ${THEME.textMuted}`}>
+                      Registre estudos para ver a distribuição.
+                    </p>
+                  </div>
+                )}
+              </article>
+
+              <article className={`${THEME.card} ratio-home-card min-h-52 p-6 rounded-3xl border relative`}>
+                <div className='flex items-start justify-between gap-3'>
+                  <h3 className={`text-base sm:text-xl leading-tight font-extrabold ${THEME.textMuted}`}>
+                    Dias em Sequência
+                  </h3>
+                  <Flame className='h-7 w-7 shrink-0' style={ICON_SOLID_STYLE} />
+                </div>
+                <p className={`mt-8 text-5xl font-extrabold ${THEME.text}`}>
+                  {homeInsights.streak}
+                </p>
+                <p className={`mt-5 text-sm sm:text-base font-medium ${THEME.textMuted}`}>
+                  {homeInsights.streak > 0
+                    ? 'Mantenha a consistência!'
+                    : 'Comece sua sequência hoje!'}
+                </p>
+              </article>
+            </section>
+
+            <section className={`${THEME.card} ratio-home-card p-5 sm:p-7 rounded-3xl border`}>
+              <button
+                type='button'
+                onClick={() => {
+                  setIsHomeFormOpen((current) => !current);
+                  triggerHaptic();
+                }}
+                className='w-full flex items-center justify-between gap-4'
+                aria-expanded={isHomeFormOpen}
               >
-                <Plus className='h-5 w-5 bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black rounded-full p-1 shadow-sm' />{' '}
-                Registrar Estudo
-              </h2>
-              <form onSubmit={handleAddSession} className='flex flex-col gap-4'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                  <div
-                    className='col-span-1 md:col-span-2 relative'
-                    ref={wrapperRef}
-                  >
-                    <label
-                      className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}
-                    >
+                <span className={`text-2xl sm:text-3xl font-extrabold flex items-center gap-3 ${THEME.text}`}>
+                  <Plus className='h-8 w-8 bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black rounded-full p-1.5 shadow-md' />
+                  Registrar Estudo
+                </span>
+                <ChevronUp
+                  className={`h-6 w-6 ${THEME.textMuted} transition-transform ${
+                    isHomeFormOpen ? '' : 'rotate-180'
+                  }`}
+                />
+              </button>
+
+              {isHomeFormOpen && (
+                <form onSubmit={handleAddSession} className='mt-7 grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
+                  <div className='relative min-w-0' ref={wrapperRef}>
+                    <label className={`block text-xs sm:text-sm font-extrabold ${THEME.textMuted} uppercase mb-2`}>
                       Disciplina
                     </label>
                     <div className='relative'>
@@ -1851,16 +2165,12 @@ export default function App() {
                         }}
                         onFocus={() => setShowSuggestions(true)}
                         placeholder='Pesquise...'
-                        className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium transition-all ${
-                          THEME.input
-                        } focus:border-[#EAB308] ${
+                        className={`ratio-home-input w-full min-w-0 rounded-2xl border py-4 pl-11 pr-3 text-sm sm:text-base outline-none font-medium transition-all ${THEME.input} focus:border-[#EAB308] ${
                           formError ? 'border-red-500' : ''
                         }`}
                         required
                       />
-                      <Search
-                        className={`h-5 w-5 absolute left-4 top-4 ${THEME.textMuted}`}
-                      />
+                      <Search className={`h-5 w-5 absolute left-4 top-4 ${THEME.textMuted}`} />
                     </div>
                     {formError && (
                       <div className='mt-2 text-xs text-red-500 flex items-center gap-1'>
@@ -1871,55 +2181,41 @@ export default function App() {
                     {showSuggestions &&
                       subjectInput &&
                       filteredSuggestions.length > 0 && (
-                        <div
-                          className={`absolute z-50 w-full mt-2 rounded-xl shadow-2xl border max-h-60 overflow-y-auto ${
-                            isDarkMode
-                              ? 'bg-neutral-900 border-neutral-800'
-                              : 'bg-white border-slate-200'
-                          }`}
-                        >
-                          {filteredSuggestions.map((s, i) => (
+                        <div className='absolute z-50 w-full mt-2 rounded-xl shadow-2xl border max-h-60 overflow-y-auto bg-neutral-900 border-neutral-800'>
+                          {filteredSuggestions.map((subject, index) => (
                             <div
-                              key={i}
+                              key={index}
                               onClick={() => {
-                                setSubjectInput(s);
+                                setSubjectInput(subject);
                                 setShowSuggestions(false);
                                 setFormError(null);
                                 triggerHaptic();
                               }}
-                              className={`px-4 py-3 cursor-pointer text-sm border-b last:border-0 font-medium ${
-                                isDarkMode
-                                  ? 'border-neutral-800 hover:bg-neutral-800 text-neutral-200'
-                                  : 'border-slate-100 hover:bg-slate-50 text-slate-700'
-                              }`}
+                              className='px-4 py-3 cursor-pointer text-sm border-b last:border-0 font-medium border-neutral-800 hover:bg-neutral-800 text-neutral-200'
                             >
-                              {s}
+                              {subject}
                             </div>
                           ))}
                         </div>
                       )}
                   </div>
-                </div>
-                <div className='grid grid-cols-2 md:grid-cols-4 gap-4 items-end'>
-                  <div className='col-span-2 md:col-span-2'>
-                    <label
-                      className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}
-                    >
+
+                  <div className='min-w-0'>
+                    <label className={`block text-xs sm:text-sm font-extrabold ${THEME.textMuted} uppercase mb-2`}>
                       Data
                     </label>
                     <input
                       type='datetime-local'
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                      className={`ratio-home-input w-full min-w-0 rounded-2xl border p-4 text-sm sm:text-base outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
                       required
                     />
                   </div>
-                  <div className='col-span-2 md:col-span-1'>
-                    <label
-                      className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}
-                    >
-                      Minutos
+
+                  <div className='min-w-0'>
+                    <label className={`block text-xs sm:text-sm font-extrabold ${THEME.textMuted} uppercase mb-2`}>
+                      Duração (min)
                     </label>
                     <div className='flex gap-2'>
                       <input
@@ -1927,7 +2223,7 @@ export default function App() {
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
                         placeholder='45'
-                        className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                        className={`ratio-home-input w-full min-w-0 rounded-2xl border p-4 text-sm sm:text-base outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
                         required
                       />
                       <button
@@ -1936,29 +2232,26 @@ export default function App() {
                           setView('timer');
                           triggerHaptic();
                         }}
-                        className={`px-3 rounded-xl border flex items-center justify-center transition-all active:scale-95 ${
-                          isDarkMode
-                            ? 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'
-                            : 'bg-slate-100 border-slate-300 hover:bg-slate-200'
-                        }`}
+                        aria-label='Abrir cronômetro'
+                        className='px-3 rounded-2xl border flex items-center justify-center transition-all active:scale-95 bg-neutral-800 border-neutral-700 hover:bg-neutral-700'
                       >
                         <Timer className={`h-5 w-5 ${THEME.text}`} />
                       </button>
                     </div>
                   </div>
-                  <div className='col-span-2 md:col-span-1'>
-                    {/* Botão principal com gradiente sutil */}
+
+                  <div className='flex items-end min-w-0'>
                     <button
                       type='submit'
                       disabled={isSubmitting}
-                      className='w-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-bold py-4 px-4 rounded-xl shadow-lg transition-transform active:scale-95'
+                      className='w-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-extrabold py-4 px-4 rounded-2xl shadow-lg transition-transform active:scale-95 disabled:opacity-60'
                     >
                       {isSubmitting ? '...' : 'Salvar'}
                     </button>
                   </div>
-                </div>
-              </form>
-            </div>
+                </form>
+              )}
+            </section>
           </div>
         )}
 
@@ -2913,7 +3206,9 @@ export default function App() {
       {/* Fixed Bottom Navigation - SÓLIDO COM LEVE TRANSLUCÊNCIA - HIDDEN IN ZEN MODE */}
       {!isZenMode && (
         <nav
-          className={`fixed bottom-0 left-0 right-0 border-t p-2 flex justify-around z-50 pb-safe transition-colors duration-200 backdrop-blur-sm ${
+          className={`fixed bottom-0 left-0 right-0 border-t flex justify-around z-50 pb-safe transition-colors duration-200 backdrop-blur-sm ${
+            view === 'home' ? 'p-3' : 'p-2'
+          } ${
             isDarkMode
               ? 'bg-neutral-950/95 border-neutral-800'
               : 'bg-white/95 border-slate-200'
@@ -2929,11 +3224,11 @@ export default function App() {
             }`}
           >
             <Home
-              className='h-5 w-5'
+              className={view === 'home' ? 'h-6 w-6' : 'h-5 w-5'}
               style={view === 'home' ? ICON_SOLID_STYLE : {}}
             />
             <span
-              className='text-[10px] font-bold'
+              className={view === 'home' ? 'text-xs font-bold' : 'text-[10px] font-bold'}
               style={{ color: view === 'home' ? ICON_SOLID_COLOR : '' }}
             >
               Início
