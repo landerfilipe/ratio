@@ -28,7 +28,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Filosofia: Lightbulb,
   História: ScrollText,
   Inglês: Languages,
-  'Inteligência Artificial': Cpu,
+  'Engenharia (IA)': Cpu,
   Lógica: Binary,
   Matemática: Sigma,
   Português: LetterText,

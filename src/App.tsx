@@ -77,7 +77,7 @@ const StatisticsSkeleton = ({ isDarkMode }: { isDarkMode: boolean }) => (
 
 // --- Imports from lib/ modules (Code Splitting) ---
 import { auth, db, appId } from './lib/firebase';
-import { FIXED_SUBJECTS } from './lib/subjects';
+import { canonicalizeSubject, FIXED_SUBJECTS } from './lib/subjects';
 import { SubjectIcon } from './components/SubjectIcon';
 import {
   formatDurationDetailed,
@@ -382,7 +382,7 @@ export default function App() {
           if (dateStr && !isNaN(new Date(dateStr).getTime())) {
             loaded.push({
               id: doc.id,
-              subject: data.subject || 'Outras',
+              subject: canonicalizeSubject(data.subject || 'Outras'),
               durationMinutes: data.durationMinutes || 0,
               date: dateStr,
               timestamp: data.timestamp || new Date(dateStr).getTime(),
@@ -1532,7 +1532,7 @@ export default function App() {
         className={`min-h-screen flex items-center justify-center p-4 antialiased ${
           isDarkMode ? 'bg-neutral-950' : 'bg-slate-50'
         }`}
-        style={{ fontFamily: "'Urbanist', sans-serif" }}
+        style={{ fontFamily: "'Outfit', sans-serif" }}
       >
         {/* SVG Definition for Login Screen */}
         <svg width='0' height='0' className='absolute block'>
@@ -1612,7 +1612,7 @@ export default function App() {
   return (
     <div
       className={`min-h-screen ${THEME.bg} ${THEME.text} font-sans pb-24 antialiased selection:bg-[#EAB308] selection:text-black transition-colors duration-200 ease-in-out`}
-      style={{ fontFamily: "'Urbanist', sans-serif" }}
+      style={{ fontFamily: "'Outfit', sans-serif" }}
     >
       <style>{`
         /* Hide scrollbar for Chrome, Safari and Opera */
@@ -2692,7 +2692,7 @@ export default function App() {
                       <div className='flex items-center gap-2'>
                         <SubjectIcon
                           subject={session.subject}
-                          className='h-[34px] w-[34px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                          className='h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
                           color='#0a0a0a'
                         />
                         <div>

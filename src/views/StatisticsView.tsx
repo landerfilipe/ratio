@@ -289,7 +289,14 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             </thead>
             <tbody>
               {(stats.evolutionReport || []).map((row: EvolutionReportItem) => (
-                <tr key={row.days} className={`border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'}`}>
+                <tr
+                  key={row.days}
+                  className={`border-b transition-colors last:border-b-0 ${
+                    isDarkMode
+                      ? 'border-neutral-800/50 odd:bg-neutral-950/35 even:bg-neutral-900/10'
+                      : 'border-slate-200/60 odd:bg-slate-100/60 even:bg-white'
+                  }`}
+                >
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
                   <td className={`py-2.5 text-center font-bold ${THEME.textMuted}`}>{row.prev}</td>
                   <td className='py-2.5 text-center'>
@@ -743,7 +750,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               key={index}
               className={`flex justify-between items-center py-3 border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'} last:border-b-0`}
             >
-              <div className='flex items-center gap-3 overflow-hidden'>
+              <div className='flex items-center gap-2 overflow-hidden'>
                 <span className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FACC15]'>
                   <SubjectIcon
                     subject={item.name}
