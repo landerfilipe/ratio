@@ -44,6 +44,7 @@ import {
 import { COLORS, getHeatmapColors, ICON_SOLID_STYLE, getPercentStyle } from '../lib/theme';
 import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/helpers';
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
+import { SubjectIcon } from '../components/SubjectIcon';
 
 const STATISTICS_RANGE_TABS: { range: TimeRange; label: string }[] = [
   { range: '7_days',   label: '7d' },
@@ -140,6 +141,7 @@ const createCustomYAxisTick = (isDarkMode: boolean) => {
             textAnchor='end'
             fill={isDarkMode ? '#a3a3a3' : '#64748b'}
             fontSize={10}
+            fontWeight={500}
           >
             {line}
           </text>
@@ -174,9 +176,9 @@ const createCustomRadarTick = (isDarkMode: boolean) => {
             y={index * 10}
             dy={0}
             textAnchor={textAnchor}
-            fill={isDarkMode ? '#e5e5e5' : '#334155'}
+            fill={isDarkMode ? '#d4d4d4' : '#334155'}
             fontSize={9}
-            fontWeight={500}
+            fontWeight={600}
           >
             {line}
           </text>
@@ -233,15 +235,21 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
       {(stats.pieLegendData || []).map((entry: ChartDataItem, index: number) => (
         <li key={index} className='flex items-center gap-1'>
           <span
-            className='w-3 h-3 rounded-sm'
+            className='flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full'
             style={{
               backgroundColor:
                 entry.name === 'Outras Matérias'
                   ? '#525252'
                   : COLORS[index % COLORS.length],
             }}
-          ></span>
-          <span className='truncate max-w-[100px]'>{entry.name}</span>
+          >
+            <SubjectIcon
+              subject={entry.name}
+              className='h-[9px] w-[9px]'
+              color='#0a0a0a'
+            />
+          </span>
+          <span className='truncate max-w-[100px] font-medium'>{entry.name}</span>
         </li>
       ))}
     </ul>
@@ -335,8 +343,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   backgroundColor: isDarkMode ? '#171717' : '#fff',
                   borderColor: isDarkMode ? '#333' : '#eee',
                 }}
-                itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                itemStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
+                labelStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
               />
               <Bar dataKey='Meta' fill={isDarkMode ? '#525252' : '#cbd5e1'} radius={[4, 4, 0, 0]} />
               <Bar dataKey='Atual' fill='url(#chartGradient)' radius={[4, 4, 0, 0]} />
@@ -464,8 +472,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   backgroundColor: isDarkMode ? '#171717' : '#fff',
                   borderColor: isDarkMode ? '#333' : '#eee',
                 }}
-                itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                itemStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
+                labelStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
               />
               <Line
                 type='linear'
@@ -547,8 +555,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   backgroundColor: isDarkMode ? '#171717' : '#fff',
                   borderColor: isDarkMode ? '#333' : '#eee',
                 }}
-                itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                itemStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
+                labelStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
               />
               <Bar dataKey='minutes' fill={isDarkMode ? '#333' : '#e2e8f0'} radius={[4, 4, 0, 0]} name='Minutos' />
               <Line type='monotone' dataKey='ma' stroke='url(#chartGradient)' strokeWidth={2} dot={false} name='Média' />
@@ -631,8 +639,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                       backgroundColor: isDarkMode ? '#171717' : '#fff',
                       borderColor: isDarkMode ? '#333' : '#eee',
                     }}
-                    itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                    labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                    itemStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
+                    labelStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
                   />
                   <Legend content={renderPieLegend} verticalAlign='bottom' />
                 </PieChart>
@@ -664,8 +672,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                       backgroundColor: isDarkMode ? '#171717' : '#fff',
                       borderColor: isDarkMode ? '#333' : '#eee',
                     }}
-                    itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                    labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                    itemStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
+                    labelStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
                   />
                 </RadarChart>
               ) : chartType === 'bar' ? (
@@ -687,8 +695,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                       backgroundColor: isDarkMode ? '#171717' : '#fff',
                       borderColor: isDarkMode ? '#333' : '#eee',
                     }}
-                    itemStyle={{ color: isDarkMode ? '#fff' : '#000' }}
-                    labelStyle={{ color: isDarkMode ? '#fff' : '#000' }}
+                    itemStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
+                    labelStyle={{ color: isDarkMode ? '#d4d4d4' : '#000' }}
                   />
                   <Bar dataKey='value' radius={[0, 4, 4, 0]}>
                     {(stats.barChartData || []).map((entry: ChartDataItem, index: number) => (
@@ -736,8 +744,14 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               className={`flex justify-between items-center py-3 border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'} last:border-b-0`}
             >
               <div className='flex items-center gap-3 overflow-hidden'>
-                <div className='w-2.5 h-2.5 rounded-sm shrink-0' style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                <span className={`text-sm font-medium truncate max-w-[140px] sm:max-w-[220px] ${THEME.text}`}>{item.name}</span>
+                <span className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FACC15]'>
+                  <SubjectIcon
+                    subject={item.name}
+                    className='h-3.5 w-3.5'
+                    color='#0a0a0a'
+                  />
+                </span>
+                <span className={`text-sm font-semibold truncate max-w-[140px] sm:max-w-[220px] ${THEME.text}`}>{item.name}</span>
               </div>
               <div className='flex gap-1.5 text-xs font-bold shrink-0 items-center'>
                 <span className={`px-1.5 py-0.5 rounded whitespace-nowrap ${isDarkMode ? 'bg-neutral-800 text-neutral-300' : 'bg-white text-slate-600 border'}`}>

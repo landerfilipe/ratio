@@ -54,11 +54,11 @@ export const getThemeClasses = (isDarkMode: boolean) => ({
     (isDarkMode
       ? 'bg-neutral-900 border-neutral-800'
       : 'bg-white border-slate-200') + ' transition-colors duration-200',
-  text: isDarkMode ? 'text-white' : 'text-slate-800',
+  text: isDarkMode ? 'text-neutral-300' : 'text-slate-800',
   textMuted: isDarkMode ? 'text-neutral-400' : 'text-slate-500',
   input:
     (isDarkMode
-      ? 'bg-neutral-900 border-neutral-700 text-white'
+      ? 'bg-neutral-900 border-neutral-700 text-neutral-300'
       : 'bg-slate-50 border-slate-300 text-slate-800') +
     ' transition-colors duration-200',
   accent: '#EAB308',

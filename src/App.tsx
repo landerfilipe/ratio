@@ -32,6 +32,7 @@ import {
   LogOut,
   History,
   Calendar as CalendarIcon,
+  CalendarDays,
   ArrowDown,
   ArrowUp,
   Search,
@@ -77,6 +78,7 @@ const StatisticsSkeleton = ({ isDarkMode }: { isDarkMode: boolean }) => (
 // --- Imports from lib/ modules (Code Splitting) ---
 import { auth, db, appId } from './lib/firebase';
 import { FIXED_SUBJECTS } from './lib/subjects';
+import { SubjectIcon } from './components/SubjectIcon';
 import {
   formatDurationDetailed,
   formatGoalDuration,
@@ -1454,7 +1456,7 @@ export default function App() {
             setSelectedCalendarDate(new Date(year, month, d));
             triggerHaptic();
           }}
-          className={`h-10 sm:h-12 w-full flex flex-col items-center justify-center relative rounded-lg transition-all active:scale-95 duration-200
+          className={`h-10 w-10 max-[359px]:h-9 max-[359px]:w-9 sm:h-12 sm:w-12 mx-auto flex flex-col items-center justify-center relative rounded-full transition-all active:scale-95 duration-200
             ${
               isSelected
                 ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-md font-bold'
@@ -1559,7 +1561,7 @@ export default function App() {
           {/* Header style preserved */}
           <h1
             className={`text-4xl font-extrabold ${
-              isDarkMode ? 'text-white' : 'text-slate-900'
+              isDarkMode ? 'text-neutral-300' : 'text-slate-900'
             } mb-1`}
           >
             Ratio
@@ -1737,7 +1739,7 @@ export default function App() {
               <button
                 onClick={handleLogout}
                 aria-label='Sair da conta'
-                className='text-xs bg-neutral-800 hover:bg-neutral-700 text-white px-3 py-2 rounded-lg flex gap-1 items-center font-bold transition-all active:scale-95'
+                className='text-xs bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-3 py-2 rounded-lg flex gap-1 items-center font-bold transition-all active:scale-95'
               >
                 <LogOut
                   className={view === 'home' ? 'h-3.5 w-3.5' : 'h-3 w-3'}
@@ -1770,7 +1772,7 @@ export default function App() {
                 </span>
               </h2>
 
-              <div className='ratio-period-switcher p-1 rounded-2xl border border-neutral-800 flex w-full overflow-hidden gap-0.5'>
+              <div className='ratio-period-switcher px-1 py-[3px] rounded-2xl border border-neutral-800 flex w-full overflow-hidden gap-0.5'>
                 {DASHBOARD_PERIODS.map(({ range, label }) => (
                   <button
                     key={range}
@@ -1778,7 +1780,7 @@ export default function App() {
                       setTimeRange(range);
                       triggerHaptic();
                     }}
-                    className={`min-w-0 flex-1 px-0.5 py-3 rounded-xl whitespace-nowrap transition-all font-extrabold text-xs ${
+                    className={`min-w-0 flex-1 px-0.5 py-2 rounded-xl whitespace-nowrap transition-all font-extrabold text-xs ${
                       timeRange === range
                         ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-md'
                         : `${THEME.textMuted} hover:text-neutral-200`
@@ -1790,8 +1792,8 @@ export default function App() {
               </div>
             </section>
 
-            <section className={`${THEME.card} ratio-home-card p-5 sm:p-6 rounded-3xl border`}>
-              <div className='flex justify-between items-center gap-3 mb-4 max-[359px]:flex-col max-[359px]:items-start'>
+            <section className={`${THEME.card} ratio-home-card px-5 py-3.5 sm:px-6 sm:py-4 rounded-3xl border`}>
+              <div className='flex justify-between items-center gap-3 mb-3 max-[359px]:flex-col max-[359px]:items-start'>
                 <div className='flex items-center gap-2 min-w-0'>
                   <Trophy className='h-5 w-5 shrink-0' style={ICON_SOLID_STYLE} />
                   <span className={`text-xs font-extrabold ${THEME.textMuted} uppercase`}>
@@ -1850,7 +1852,7 @@ export default function App() {
                   )}
                 </span>
               </div>
-              <div className='w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden'>
+              <div className='w-full bg-neutral-800 rounded-full h-2 overflow-hidden'>
                 <div
                   className='h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#FDE047] to-[#EAB308] shadow-[0_0_10px_rgba(234,179,8,0.3)]'
                   style={{
@@ -1863,7 +1865,7 @@ export default function App() {
                   }}
                 />
               </div>
-              <p className={`mt-3 text-xs sm:text-base font-medium ${THEME.textMuted}`}>
+              <p className={`mt-2 text-xs sm:text-base font-medium ${THEME.textMuted}`}>
                 {stats.goalRemainingMinutes > 0 ? (
                   <>
                     Faltam{' '}
@@ -1903,7 +1905,7 @@ export default function App() {
                   {stats.goalPercentage}%
                 </div>
                 <div className='absolute inset-x-5 max-[480px]:inset-x-3 top-1/2 -translate-y-1/2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-0'>
-                  <div className={`min-w-0 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
+                  <div className='min-w-0 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight text-neutral-300'>
                     {formatDurationDetailed(
                       timeRange === 'day'
                         ? stats.rangeMinutes
@@ -1980,7 +1982,7 @@ export default function App() {
                     strokeLinejoin='round'
                   />
                 </svg>
-                <div className={`absolute z-10 left-5 max-[480px]:left-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
+                <div className='absolute z-10 left-5 max-[480px]:left-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight text-neutral-300'>
                   {formatDurationDetailed(
                     timeRange === 'day' ? stats.totalMinutes : stats.rangeMinutes
                   )}
@@ -2056,7 +2058,7 @@ export default function App() {
 
               <article className={`${THEME.card} ratio-home-card h-[156px] sm:h-[180px] p-6 rounded-3xl border relative`}>
                 <div className='flex items-center justify-between gap-3'>
-                  <h3 className={`relative top-1 text-[16px] sm:text-[22px] leading-tight font-extrabold ${THEME.textMuted}`}>
+                  <h3 className={`relative top-[2px] text-[16px] sm:text-[22px] leading-tight font-extrabold ${THEME.textMuted}`}>
                     Sequência
                   </h3>
                   <Flame className='h-7 w-7 shrink-0' style={ICON_SOLID_STYLE} />
@@ -2227,7 +2229,7 @@ export default function App() {
                 onClick={handleTimerExit}
                 className={`p-2 rounded-full transition-colors z-[80] cursor-pointer ${
                   isDarkMode
-                    ? 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    ? 'bg-neutral-900 text-neutral-400 hover:text-neutral-300 hover:bg-neutral-800'
                     : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
                 }`}
               >
@@ -2397,7 +2399,7 @@ export default function App() {
                         }}
                         className={`p-2 rounded-full ${
                           isDarkMode
-                            ? 'bg-neutral-800 hover:bg-neutral-700 text-white'
+                            ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300'
                             : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
                         }`}
                       >
@@ -2413,7 +2415,7 @@ export default function App() {
                         }}
                         className={`p-2 rounded-full ${
                           isDarkMode
-                            ? 'bg-neutral-800 hover:bg-neutral-700 text-white'
+                            ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300'
                             : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
                         }`}
                       >
@@ -2431,7 +2433,7 @@ export default function App() {
                   aria-label='Resetar cronômetro'
                   className={`p-3 rounded-full transition-all active:scale-95 ${
                     isDarkMode
-                      ? 'text-neutral-500 hover:text-white hover:bg-neutral-800'
+                      ? 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'
                       : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'
                   }`}
                   title='Resetar'
@@ -2450,7 +2452,7 @@ export default function App() {
                       ? 'border-red-500/50 text-red-500 hover:bg-red-500/10'
                       : `border-neutral-600 ${
                           isDarkMode
-                            ? 'text-white hover:border-white hover:bg-white/5'
+                            ? 'text-neutral-300 hover:border-neutral-300 hover:bg-neutral-300/5'
                             : 'text-slate-700 border-slate-300 hover:border-slate-500 hover:bg-slate-100'
                         }`
                   }`}
@@ -2477,7 +2479,7 @@ export default function App() {
                   placeholder='Selecione a disciplina...'
                   className={`w-full text-sm rounded-xl py-3 pl-10 pr-4 outline-none focus:border-[#EAB308] transition-all text-center shadow-lg backdrop-blur-sm ${
                     isDarkMode
-                      ? 'bg-neutral-900/80 border border-neutral-800 text-white placeholder-neutral-600 focus:bg-neutral-900'
+                      ? 'bg-neutral-900/80 border border-neutral-800 text-neutral-300 placeholder-neutral-600 focus:bg-neutral-900'
                       : 'bg-white/80 border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white'
                   }`}
                 />
@@ -2509,7 +2511,7 @@ export default function App() {
                           }}
                           className={`px-4 py-3 cursor-pointer text-xs border-b last:border-0 font-medium text-center ${
                             isDarkMode
-                              ? 'border-neutral-800 text-neutral-300 hover:bg-neutral-800 hover:text-white'
+                              ? 'border-neutral-800 text-neutral-300 hover:bg-neutral-800 hover:text-neutral-300'
                               : 'border-slate-100 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                           }`}
                         >
@@ -2632,8 +2634,11 @@ export default function App() {
                   isDarkMode ? 'border-neutral-800' : 'border-slate-100'
                 }`}
               >
-                <div className='flex items-center gap-2'>
-                  <div>
+                <div>
+                  <div className='flex items-center gap-1.5'>
+                    <CalendarDays
+                      className={`relative -top-0.5 h-[18px] w-[18px] shrink-0 ${THEME.textMuted}`}
+                    />
                     <h3 className={`text-[15px] font-bold ${THEME.text}`}>
                       {selectedCalendarDate.toLocaleDateString('pt-BR', {
                         weekday: 'long',
@@ -2641,17 +2646,17 @@ export default function App() {
                         month: 'long',
                       })}
                     </h3>
-                    <div className='flex items-center gap-2'>
-                      <p className={`text-xs ${THEME.textMuted} font-medium`}>
-                        Resumo do dia
-                      </p>
-                      {/* Percentage Moved Next to Title - INLINE */}
-                      <div
-                        className='text-[12.5px] font-bold'
-                        style={getPercentStyle(selectedDayPercentage - 100)}
-                      >
-                        {selectedDayPercentage}%
-                      </div>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <p className={`text-xs ${THEME.textMuted} font-medium`}>
+                      Resumo do dia
+                    </p>
+                    {/* Percentage Moved Next to Title - INLINE */}
+                    <div
+                      className='text-[12.5px] font-bold'
+                      style={getPercentStyle(selectedDayPercentage - 100)}
+                    >
+                      {selectedDayPercentage}%
                     </div>
                   </div>
                 </div>
@@ -2684,24 +2689,31 @@ export default function App() {
                           : ''
                       }`}
                     >
-                      <div>
-                        <h4 className={`font-bold ${THEME.text} text-sm`}>
-                          {session.subject}
-                        </h4>
-                        <p
-                          className={`text-[11px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
-                        >
-                          <History className='h-3 w-3' />{' '}
-                          {new Date(session.date).toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                      <div className='flex items-center gap-2'>
+                        <SubjectIcon
+                          subject={session.subject}
+                          className='h-[34px] w-[34px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                          color='#0a0a0a'
+                        />
+                        <div>
+                          <h4 className={`font-bold ${THEME.text} text-sm`}>
+                            {session.subject}
+                          </h4>
+                          <p
+                            className={`text-[11px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                          >
+                            <History className='h-3 w-3' />{' '}
+                            {new Date(session.date).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
                       </div>
                       <span
                         className={`px-2 py-1 rounded text-xs font-bold ${
                           isDarkMode
-                            ? 'bg-neutral-800 text-white'
+                            ? 'bg-neutral-800 text-neutral-300'
                             : 'bg-white border text-slate-600'
                         }`}
                       >
@@ -2860,34 +2872,41 @@ export default function App() {
                       </div>
                     ) : (
                       <div className='flex items-center justify-between'>
-                        <div className='flex-1 min-w-0 pr-4'>
-                          <h3
-                            className={`font-bold text-base break-words leading-tight ${TEXT_GRADIENT}`}
-                          >
-                            {session.subject}
-                          </h3>
-                          <p
-                            className={`text-xs ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
-                          >
-                            <History className='h-3 w-3' />{' '}
-                            {new Date(session.date).toLocaleDateString(
-                              'pt-BR'
-                            )}{' '}
-                            <span className='mx-1'>•</span>{' '}
-                            {new Date(session.date).toLocaleTimeString(
-                              'pt-BR',
-                              {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              }
-                            )}
-                          </p>
+                        <div className='flex flex-1 min-w-0 items-center gap-2 pr-4'>
+                          <SubjectIcon
+                            subject={session.subject}
+                            className='h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                            color='#0a0a0a'
+                          />
+                          <div className='min-w-0'>
+                            <h3
+                              className={`font-bold text-base break-words leading-tight ${THEME.text}`}
+                            >
+                              {session.subject}
+                            </h3>
+                            <p
+                              className={`text-xs ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                            >
+                              <History className='h-3 w-3' />{' '}
+                              {new Date(session.date).toLocaleDateString(
+                                'pt-BR'
+                              )}{' '}
+                              <span className='mx-1'>•</span>{' '}
+                              {new Date(session.date).toLocaleTimeString(
+                                'pt-BR',
+                                {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                }
+                              )}
+                            </p>
+                          </div>
                         </div>
                         <div className='flex items-center gap-2'>
                           <span
                             className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${
                               isDarkMode
-                                ? 'bg-neutral-800 text-white'
+                                ? 'bg-neutral-800 text-neutral-300'
                                 : 'bg-white border text-slate-600'
                             }`}
                           >
