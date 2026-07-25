@@ -53,7 +53,6 @@ import {
   RotateCcw,
   Hourglass,
   Flame,
-  ChevronUp,
 } from 'lucide-react';
 
 // --- LAZY LOADING: StatisticsView contém todo o Recharts (~400KB) ---
@@ -141,33 +140,21 @@ const getLocalDateKey = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-const getRadarPoints = (values: number[], radius = 54): string =>
-  Array.from({ length: values.length }, (_, index) => {
-    const angle = -Math.PI / 2 + (index * Math.PI * 2) / values.length;
-    const value = Math.max(0, Math.min(values[index] || 0, 1));
-    const pointRadius = radius * value;
-    const x = 80 + Math.cos(angle) * pointRadius;
-    const y = 80 + Math.sin(angle) * pointRadius;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-
 const getSmoothSvgPath = (points: { x: number; y: number }[]): string => {
   if (points.length === 0) return '';
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
 
-  return points.reduce((path, point, index) => {
-    if (index === 0) return `M ${point.x} ${point.y}`;
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let index = 0; index < points.length - 1; index++) {
+    const current = points[index];
+    const next = points[index + 1];
+    const midpointX = (current.x + next.x) / 2;
+    const midpointY = (current.y + next.y) / 2;
+    path += ` Q ${current.x} ${current.y}, ${midpointX.toFixed(1)} ${midpointY.toFixed(1)}`;
+  }
 
-    const previousPrevious = points[Math.max(index - 2, 0)];
-    const previous = points[index - 1];
-    const next = points[Math.min(index + 1, points.length - 1)];
-    const controlPointOneX = previous.x + (point.x - previousPrevious.x) / 6;
-    const controlPointOneY = previous.y + (point.y - previousPrevious.y) / 6;
-    const controlPointTwoX = point.x - (next.x - previous.x) / 6;
-    const controlPointTwoY = point.y - (next.y - previous.y) / 6;
-
-    return `${path} C ${controlPointOneX.toFixed(1)} ${controlPointOneY.toFixed(1)}, ${controlPointTwoX.toFixed(1)} ${controlPointTwoY.toFixed(1)}, ${point.x} ${point.y}`;
-  }, '');
+  const last = points[points.length - 1];
+  return `${path} Q ${last.x} ${last.y}, ${last.x} ${last.y}`;
 };
 
 export default function App() {
@@ -198,7 +185,6 @@ export default function App() {
   const [tempGoal, setTempGoal] = useState('180');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isHomeFormOpen, setIsHomeFormOpen] = useState(true);
   const [view, setView] = useState<ViewState>('home');
   const [chartType, setChartType] = useState<'pie' | 'radar' | 'bar'>('pie');
 
@@ -1381,22 +1367,7 @@ export default function App() {
       subjectMinutes,
       ([name, minutes]) => ({ name, minutes })
     ).sort((a, b) => b.minutes - a.minutes);
-    const radarClockwiseRankOrder = [1, 5, 9, 4, 8, 12, 2, 6, 10, 3, 7, 11];
-    const orderedSubjects = radarClockwiseRankOrder
-      .map((rank) => chartSortedSubjects[rank - 1])
-      .filter((subject): subject is (typeof chartSortedSubjects)[number] =>
-        Boolean(subject)
-      );
-    const subjects =
-      orderedSubjects.length > 0 && orderedSubjects.length < 3
-        ? [
-            ...orderedSubjects,
-            ...Array.from({ length: 3 - orderedSubjects.length }, () => ({
-              name: '',
-              minutes: 0,
-            })),
-          ]
-        : orderedSubjects;
+    const topSubjects = chartSortedSubjects.slice(0, 5);
 
     const minutesByDay = new Map<string, number>();
     sessions.forEach((session) => {
@@ -1419,15 +1390,22 @@ export default function App() {
       date.setDate(date.getDate() - (7 - index));
       return minutesByDay.get(getLocalDateKey(date)) || 0;
     });
-    const recentMax = Math.max(...recentMinutes, 1);
-    const sparklineCoordinates = recentMinutes.map((minutes, index) => {
+    let accumulatedMinutes = 0;
+    const recentCumulativeMinutes = recentMinutes.map((minutes) => {
+      accumulatedMinutes += minutes;
+      return accumulatedMinutes;
+    });
+    const recentMin = Math.min(...recentCumulativeMinutes);
+    const recentMax = Math.max(...recentCumulativeMinutes);
+    const recentRange = Math.max(recentMax - recentMin, 1);
+    const sparklineCoordinates = recentCumulativeMinutes.map((minutes, index) => {
         const x = (index / (recentMinutes.length - 1)) * 120;
-        const y = 58 - (minutes / recentMax) * 48;
+        const y = 58 - ((minutes - recentMin) / recentRange) * 48;
         return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
       });
     const sparklinePath = getSmoothSvgPath(sparklineCoordinates);
 
-    return { subjects, streak, sparklinePath };
+    return { topSubjects, streak, sparklinePath };
   }, [sessions]);
 
   // --- Theme Colors (imported from lib/theme.ts) ---
@@ -1683,27 +1661,31 @@ export default function App() {
           <div
             className='max-w-4xl mx-auto flex justify-between items-center'
           >
-            <div className='flex items-center gap-3'>
+            <div
+              className={`flex items-center ${
+                view === 'home' ? 'h-10 gap-2' : 'gap-3'
+              }`}
+            >
               <Activity
                 className={`animate-in fade-in slide-in-from-left-1 duration-300 ${
-                  view === 'home' ? 'h-9 w-9' : 'h-6 w-6'
+                  view === 'home' ? 'h-7 w-7' : 'h-6 w-6'
                 }`}
                 style={ICON_HEADER_STYLE}
               />
               <div>
                 <h1
                   className={`font-extrabold tracking-tight leading-none animate-in fade-in slide-in-from-left-1 delay-150 duration-300 fill-mode-backwards ${
-                    view === 'home' ? 'text-2xl sm:text-3xl' : 'text-xl'
+                    view === 'home' ? 'text-xl' : 'text-xl'
                   }`}
                 >
                   Ratio
                 </h1>
                 <p
                   className={`uppercase font-bold tracking-wider animate-in fade-in slide-in-from-left-1 delay-300 duration-300 fill-mode-backwards ${TEXT_GRADIENT} ${
-                    view === 'home' ? 'text-[10px] sm:text-xs mt-1' : 'text-[9px]'
+                    view === 'home' ? 'text-[9px] mt-0.5' : 'text-[9px]'
                   }`}
                 >
-                  {view === 'home' ? 'Evolução' : 'Evolução Calculada'}
+                  Evolução Calculada
                 </p>
               </div>
             </div>
@@ -1712,7 +1694,9 @@ export default function App() {
             >
               <div
                 onClick={() => handleViewChange('profile')}
-                className={`w-8 h-8 rounded-full cursor-pointer shadow-sm active:scale-95 transition-transform mr-1 flex items-center justify-center ${
+                className={`${
+                  view === 'home' ? 'w-10 h-10' : 'w-8 h-8'
+                } rounded-full cursor-pointer shadow-sm active:scale-95 transition-transform mr-1 flex items-center justify-center ${
                   profile.photoUrl
                     ? 'bg-gradient-to-tr from-[#FDE047] to-[#B45309] p-[1.5px]'
                     : `bg-transparent border border-solid ${
@@ -1731,8 +1715,8 @@ export default function App() {
                       <img
                         src={profile.photoUrl}
                         alt='Perfil'
-                        width={32}
-                        height={32}
+                        width={view === 'home' ? 40 : 32}
+                        height={view === 'home' ? 40 : 32}
                         loading='eager'
                         className='w-full h-full rounded-full object-cover'
                       />
@@ -1740,7 +1724,7 @@ export default function App() {
                   </div>
                 ) : (
                   <UserIcon
-                    className={`w-4 h-4 ${
+                    className={`${view === 'home' ? 'w-5 h-5' : 'w-4 h-4'} ${
                       isDarkMode ? 'text-neutral-400' : 'text-neutral-600'
                     }`}
                   />
@@ -1751,7 +1735,9 @@ export default function App() {
                 aria-label='Sair da conta'
                 className='text-xs bg-neutral-800 hover:bg-neutral-700 text-white px-3 py-2 rounded-lg flex gap-1 items-center font-bold transition-all active:scale-95'
               >
-                <LogOut className='h-3 w-3' />
+                <LogOut
+                  className={view === 'home' ? 'h-3.5 w-3.5' : 'h-3 w-3'}
+                />
               </button>
             </div>
           </div>
@@ -1771,7 +1757,7 @@ export default function App() {
         {view === 'home' && (
           <div className='space-y-7 animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out'>
             <section className='space-y-5'>
-              <h2 className={`text-3xl sm:text-4xl font-light tracking-tight ${THEME.text}`}>
+              <h2 className={`text-xl font-light tracking-tight ${THEME.text}`}>
                 Olá,{' '}
                 <span className={`font-extrabold ${TEXT_GRADIENT}`}>
                   {profile.name ||
@@ -1780,7 +1766,7 @@ export default function App() {
                 </span>
               </h2>
 
-              <div className='ratio-period-switcher p-1.5 rounded-2xl border border-neutral-800 flex w-full overflow-x-auto gap-1 hide-scrollbar'>
+              <div className='ratio-period-switcher p-1 rounded-2xl border border-neutral-800 flex w-full overflow-hidden gap-0.5'>
                 {DASHBOARD_PERIODS.map(({ range, label }) => (
                   <button
                     key={range}
@@ -1788,7 +1774,7 @@ export default function App() {
                       setTimeRange(range);
                       triggerHaptic();
                     }}
-                    className={`min-w-[58px] flex-1 px-3 py-3 rounded-xl whitespace-nowrap transition-all font-extrabold text-sm ${
+                    className={`min-w-0 flex-1 px-0.5 py-3 rounded-xl whitespace-nowrap transition-all font-extrabold text-xs ${
                       timeRange === range
                         ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-md'
                         : `${THEME.textMuted} hover:text-neutral-200`
@@ -1804,7 +1790,7 @@ export default function App() {
               <div className='flex justify-between items-center gap-3 mb-4 max-[359px]:flex-col max-[359px]:items-start'>
                 <div className='flex items-center gap-2 min-w-0'>
                   <Trophy className='h-5 w-5 shrink-0' style={ICON_SOLID_STYLE} />
-                  <span className={`text-base sm:text-lg font-extrabold ${THEME.textMuted} uppercase`}>
+                  <span className={`text-xs font-extrabold ${THEME.textMuted} uppercase`}>
                     Meta
                   </span>
                   {isEditingGoal ? (
@@ -1813,7 +1799,7 @@ export default function App() {
                         type='number'
                         value={tempGoal}
                         onChange={(e) => setTempGoal(e.target.value)}
-                        className='w-16 text-sm p-1.5 rounded-lg bg-neutral-800 border border-neutral-700 outline-none'
+                        className='w-16 text-xs p-1.5 rounded-lg bg-neutral-800 border border-neutral-700 outline-none'
                         autoFocus
                       />
                       <button
@@ -1837,7 +1823,7 @@ export default function App() {
                         setIsEditingGoal(true);
                         setTempGoal((profile.dailyGoalMinutes || 180).toString());
                       }}
-                      className={`text-sm sm:text-base font-bold flex items-center gap-1 ${THEME.textMuted}`}
+                      className={`text-xs font-bold flex items-center gap-1 ${THEME.textMuted}`}
                     >
                       ({formatGoalDuration(stats.currentGoalMinutes)})
                       <Edit2 className='h-4 w-4' />
@@ -1845,7 +1831,7 @@ export default function App() {
                   )}
                 </div>
                 <span
-                  className='text-sm sm:text-base font-extrabold flex items-center gap-1 whitespace-nowrap max-[359px]:self-end'
+                  className='text-[11.5px] font-extrabold flex items-center gap-1 whitespace-nowrap max-[359px]:self-end'
                   style={getPercentStyle(stats.goalDeviation)}
                 >
                   {stats.goalDeviation >= 0 ? '+' : '-'}
@@ -1873,7 +1859,7 @@ export default function App() {
                   }}
                 />
               </div>
-              <p className={`mt-3 text-sm sm:text-base font-medium ${THEME.textMuted}`}>
+              <p className={`mt-3 text-xs sm:text-base font-medium ${THEME.textMuted}`}>
                 {stats.goalRemainingMinutes > 0 ? (
                   <>
                     Faltam{' '}
@@ -1912,8 +1898,8 @@ export default function App() {
                 >
                   {stats.goalPercentage}%
                 </div>
-                <div className='mt-7 max-[480px]:mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-0'>
-                  <div className={`min-w-0 whitespace-nowrap text-[clamp(1.1rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
+                <div className='mt-7 max-[480px]:mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-0'>
+                  <div className={`min-w-0 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
                     {formatDurationDetailed(
                       timeRange === 'day'
                         ? stats.rangeMinutes
@@ -1990,12 +1976,12 @@ export default function App() {
                     strokeLinejoin='round'
                   />
                 </svg>
-                <div className={`relative z-10 mt-8 max-[480px]:mt-6 text-4xl sm:text-5xl max-[480px]:text-[1.55rem] font-extrabold tracking-tight ${THEME.text}`}>
+                <div className={`relative z-10 mt-7 max-[480px]:mt-6 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
                   {formatDurationDetailed(
                     timeRange === 'day' ? stats.totalMinutes : stats.rangeMinutes
                   )}
                 </div>
-                <div className={`absolute z-10 bottom-4 left-5 right-5 max-[480px]:left-3 max-[480px]:right-3 text-[9px] sm:text-[11px] leading-tight ${THEME.textMuted}`}>
+                <div className={`absolute z-10 bottom-4 left-5 right-5 max-[480px]:left-3 max-[480px]:right-3 text-[10px] sm:text-[11px] leading-tight ${THEME.textMuted}`}>
                   <p>
                     Minutos Registrados (
                     {timeRange === 'day' ? 'Hoje' : 'Média'}):{' '}
@@ -2013,92 +1999,47 @@ export default function App() {
             </section>
 
             <section className='grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
-              <article className={`${THEME.card} ratio-home-card min-h-52 p-3 rounded-3xl border overflow-hidden`}>
-                {homeInsights.subjects.length > 0 ? (
-                  <svg viewBox='0 0 160 160' className='w-full h-full' role='img' aria-label='Distribuição de tempo por disciplina'>
-                    {[0.25, 0.5, 0.75, 1].map((level) => (
-                      <polygon
-                        key={level}
-                        points={getRadarPoints(
-                          Array(homeInsights.subjects.length).fill(level)
-                        )}
-                        fill='none'
-                        stroke='#404040'
-                        strokeWidth='0.8'
-                      />
-                    ))}
-                    {homeInsights.subjects.map((subject, index) => {
-                      const angle =
-                        -Math.PI / 2 +
-                        (index * Math.PI * 2) / homeInsights.subjects.length;
+              <article className={`${THEME.card} ratio-home-card min-h-52 p-4 rounded-3xl border overflow-hidden`}>
+                <h3 className={`text-sm sm:text-xl leading-tight font-extrabold ${THEME.textMuted}`}>
+                  Principais Matérias
+                </h3>
+                {homeInsights.topSubjects.length > 0 ? (
+                  <div
+                    className='mt-4 flex flex-col justify-center gap-2.5'
+                    role='img'
+                    aria-label='Cinco matérias com maior tempo registrado'
+                  >
+                    {homeInsights.topSubjects.map((subject) => {
+                      const largestSubjectMinutes =
+                        homeInsights.topSubjects[0]?.minutes || 1;
                       return (
-                        <line
-                          key={`${subject.name || 'axis'}-${index}`}
-                          x1='80'
-                          y1='80'
-                          x2={80 + Math.cos(angle) * 54}
-                          y2={80 + Math.sin(angle) * 54}
-                          stroke='#404040'
-                          strokeWidth='0.8'
-                        />
+                        <div key={subject.name} className='min-w-0'>
+                          <div className={`mb-1 flex items-center justify-between gap-2 text-[9px] sm:text-xs font-bold ${THEME.textMuted}`}>
+                            <span
+                              className='truncate text-[10px] sm:text-[13px]'
+                              title={subject.name}
+                            >
+                              {subject.name}
+                            </span>
+                            <span className='shrink-0'>
+                              {formatDurationDetailed(subject.minutes)}
+                            </span>
+                          </div>
+                          <div className='h-1.5 rounded-full bg-neutral-800 overflow-hidden'>
+                            <div
+                              className='h-full rounded-full bg-gradient-to-r from-[#FDE047] to-[#EAB308]'
+                              style={{
+                                width: `${Math.max(
+                                  (subject.minutes / largestSubjectMinutes) * 100,
+                                  4
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
                       );
                     })}
-                    <polygon
-                      points={getRadarPoints(
-                        homeInsights.subjects.map(
-                          ({ minutes }) =>
-                            minutes /
-                            Math.max(
-                              ...homeInsights.subjects.map((subject) => subject.minutes),
-                              1
-                            )
-                        )
-                      )}
-                      fill='#EAB308'
-                      fillOpacity='0.28'
-                      stroke='#EAB308'
-                      strokeWidth='2'
-                    />
-                    {homeInsights.subjects.map((subject, index) => {
-                      if (!subject.name) return null;
-                      const angle =
-                        -Math.PI / 2 +
-                        (index * Math.PI * 2) / homeInsights.subjects.length;
-                      const cosine = Math.cos(angle);
-                      const labelX = 80 + cosine * 66;
-                      const labelY = 80 + Math.sin(angle) * 66;
-                      const anchor =
-                        cosine > 0.25
-                          ? 'start'
-                          : cosine < -0.25
-                            ? 'end'
-                            : 'middle';
-                      return (
-                        <text
-                          key={`${subject.name}-${index}`}
-                          x={labelX}
-                          y={labelY}
-                          textAnchor={anchor}
-                          dominantBaseline='middle'
-                          fill='#a3a3a3'
-                          fontSize={
-                            homeInsights.subjects.length > 8
-                              ? '4.5'
-                              : homeInsights.subjects.length > 5
-                                ? '5'
-                                : '6'
-                          }
-                          fontWeight='700'
-                        >
-                          {`${
-                            subject.name.length > 10
-                              ? `${subject.name.slice(0, 9)}…`
-                              : subject.name
-                          } (${formatDurationDetailed(subject.minutes)})`}
-                        </text>
-                      );
-                    })}
-                  </svg>
+                  </div>
                 ) : (
                   <div className='h-full flex flex-col items-center justify-center text-center px-2'>
                     <Activity className='h-8 w-8 mb-3' style={ICON_SOLID_STYLE} />
@@ -2110,16 +2051,16 @@ export default function App() {
               </article>
 
               <article className={`${THEME.card} ratio-home-card min-h-52 p-6 rounded-3xl border relative`}>
-                <div className='flex items-start justify-between gap-3'>
-                  <h3 className={`text-base sm:text-xl leading-tight font-extrabold ${THEME.textMuted}`}>
-                    Dias em Sequência
+                <div className='flex items-center justify-between gap-3'>
+                  <h3 className={`text-[16px] sm:text-[22px] leading-tight font-extrabold ${THEME.textMuted}`}>
+                    Sequência
                   </h3>
                   <Flame className='h-7 w-7 shrink-0' style={ICON_SOLID_STYLE} />
                 </div>
-                <p className={`mt-8 text-5xl font-extrabold ${THEME.text}`}>
+                <p className={`mt-8 text-4xl font-extrabold ${THEME.text}`}>
                   {homeInsights.streak}
                 </p>
-                <p className={`mt-5 text-sm sm:text-base font-medium ${THEME.textMuted}`}>
+                <p className={`mt-5 text-[10px] sm:text-base font-medium ${THEME.textMuted}`}>
                   {homeInsights.streak > 0
                     ? 'Mantenha a consistência!'
                     : 'Comece sua sequência hoje!'}
@@ -2127,31 +2068,15 @@ export default function App() {
               </article>
             </section>
 
-            <section className={`${THEME.card} ratio-home-card p-5 sm:p-7 rounded-3xl border`}>
-              <button
-                type='button'
-                onClick={() => {
-                  setIsHomeFormOpen((current) => !current);
-                  triggerHaptic();
-                }}
-                className='w-full flex items-center justify-between gap-4'
-                aria-expanded={isHomeFormOpen}
-              >
-                <span className={`text-2xl sm:text-3xl font-extrabold flex items-center gap-3 ${THEME.text}`}>
-                  <Plus className='h-8 w-8 bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black rounded-full p-1.5 shadow-md' />
-                  Registrar Estudo
-                </span>
-                <ChevronUp
-                  className={`h-6 w-6 ${THEME.textMuted} transition-transform ${
-                    isHomeFormOpen ? '' : 'rotate-180'
-                  }`}
-                />
-              </button>
-
-              {isHomeFormOpen && (
-                <form onSubmit={handleAddSession} className='mt-7 grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
-                  <div className='relative min-w-0' ref={wrapperRef}>
-                    <label className={`block text-xs sm:text-sm font-extrabold ${THEME.textMuted} uppercase mb-2`}>
+            <section className={`${THEME.card} p-6 rounded-2xl border shadow-sm`}>
+              <h2 className={`text-lg font-bold mb-6 flex items-center gap-2 ${THEME.text}`}>
+                <Plus className='h-5 w-5 bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black rounded-full p-1 shadow-sm' />
+                Registrar Estudo
+              </h2>
+              <form onSubmit={handleAddSession} className='flex flex-col gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div className='col-span-1 md:col-span-2 relative' ref={wrapperRef}>
+                    <label className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}>
                       Disciplina
                     </label>
                     <div className='relative'>
@@ -2165,7 +2090,7 @@ export default function App() {
                         }}
                         onFocus={() => setShowSuggestions(true)}
                         placeholder='Pesquise...'
-                        className={`ratio-home-input w-full min-w-0 rounded-2xl border py-4 pl-11 pr-3 text-sm sm:text-base outline-none font-medium transition-all ${THEME.input} focus:border-[#EAB308] ${
+                        className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium transition-all ${THEME.input} focus:border-[#EAB308] ${
                           formError ? 'border-red-500' : ''
                         }`}
                         required
@@ -2181,7 +2106,13 @@ export default function App() {
                     {showSuggestions &&
                       subjectInput &&
                       filteredSuggestions.length > 0 && (
-                        <div className='absolute z-50 w-full mt-2 rounded-xl shadow-2xl border max-h-60 overflow-y-auto bg-neutral-900 border-neutral-800'>
+                        <div
+                          className={`absolute z-50 w-full mt-2 rounded-xl shadow-2xl border max-h-60 overflow-y-auto ${
+                            isDarkMode
+                              ? 'bg-neutral-900 border-neutral-800'
+                              : 'bg-white border-slate-200'
+                          }`}
+                        >
                           {filteredSuggestions.map((subject, index) => (
                             <div
                               key={index}
@@ -2191,7 +2122,11 @@ export default function App() {
                                 setFormError(null);
                                 triggerHaptic();
                               }}
-                              className='px-4 py-3 cursor-pointer text-sm border-b last:border-0 font-medium border-neutral-800 hover:bg-neutral-800 text-neutral-200'
+                              className={`px-4 py-3 cursor-pointer text-sm border-b last:border-0 font-medium ${
+                                isDarkMode
+                                  ? 'border-neutral-800 hover:bg-neutral-800 text-neutral-200'
+                                  : 'border-slate-100 hover:bg-slate-50 text-slate-700'
+                              }`}
                             >
                               {subject}
                             </div>
@@ -2199,58 +2134,45 @@ export default function App() {
                         </div>
                       )}
                   </div>
+                </div>
 
+                <div className='grid grid-cols-2 gap-4 items-end'>
                   <div className='min-w-0'>
-                    <label className={`block text-xs sm:text-sm font-extrabold ${THEME.textMuted} uppercase mb-2`}>
+                    <label className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}>
                       Data
                     </label>
                     <input
                       type='datetime-local'
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className={`ratio-home-input w-full min-w-0 rounded-2xl border p-4 text-sm sm:text-base outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
                       required
                     />
                   </div>
 
                   <div className='min-w-0'>
-                    <label className={`block text-xs sm:text-sm font-extrabold ${THEME.textMuted} uppercase mb-2`}>
-                      Duração (min)
+                    <label className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}>
+                      Minutos
                     </label>
-                    <div className='flex gap-2'>
-                      <input
-                        type='number'
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        placeholder='45'
-                        className={`ratio-home-input w-full min-w-0 rounded-2xl border p-4 text-sm sm:text-base outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
-                        required
-                      />
-                      <button
-                        type='button'
-                        onClick={() => {
-                          setView('timer');
-                          triggerHaptic();
-                        }}
-                        aria-label='Abrir cronômetro'
-                        className='px-3 rounded-2xl border flex items-center justify-center transition-all active:scale-95 bg-neutral-800 border-neutral-700 hover:bg-neutral-700'
-                      >
-                        <Timer className={`h-5 w-5 ${THEME.text}`} />
-                      </button>
-                    </div>
+                    <input
+                      type='number'
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      placeholder='45'
+                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                      required
+                    />
                   </div>
+                </div>
 
-                  <div className='flex items-end min-w-0'>
-                    <button
-                      type='submit'
-                      disabled={isSubmitting}
-                      className='w-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-extrabold py-4 px-4 rounded-2xl shadow-lg transition-transform active:scale-95 disabled:opacity-60'
-                    >
-                      {isSubmitting ? '...' : 'Salvar'}
-                    </button>
-                  </div>
-                </form>
-              )}
+                <button
+                  type='submit'
+                  disabled={isSubmitting}
+                  className='w-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-bold py-4 px-4 rounded-xl shadow-lg transition-transform active:scale-95'
+                >
+                  {isSubmitting ? '...' : 'Salvar'}
+                </button>
+              </form>
             </section>
           </div>
         )}
