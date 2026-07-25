@@ -1416,9 +1416,9 @@ export default function App() {
   // Filtro do histórico calculado uma única vez por mudança de busca/sessões
   // (antes era executado duas vezes por render dentro do JSX).
   const filteredHistorySessions = useMemo(() => {
-    const term = historySearch.toLowerCase();
+    const term = normalizeString(historySearch);
     if (!term) return sessions;
-    return sessions.filter((s) => s.subject.toLowerCase().includes(term));
+    return sessions.filter((s) => normalizeString(s.subject).includes(term));
   }, [sessions, historySearch]);
   const dailyGoal = profile.dailyGoalMinutes || 180;
   const selectedDayPercentage =
