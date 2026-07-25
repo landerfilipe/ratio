@@ -1,15 +1,16 @@
 // --- Lista Fixa de Disciplinas ---
 export const FIXED_SUBJECTS = [
    'Bíblia',
-   'Ciência',
+   'Ciências',
    'Economia',
-   'Engenharia (IA)',
    'Epistemologia',
    'Estatística',
    'Estratégia',
-   'Linguagem',
+   'Inglês',
+   'Inteligência Artificial',
+   'Lógica',
    'Matemática',
+   'Português',
    'Provas e Carreira',
    'Psicologia',
-   'Tecnologia',
 ].sort();
