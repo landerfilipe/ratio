@@ -288,14 +288,22 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {(stats.evolutionReport || []).map((row: EvolutionReportItem) => (
+              {(stats.evolutionReport || []).map((row: EvolutionReportItem, index: number) => (
                 <tr
                   key={row.days}
-                  className={`border-b transition-colors last:border-b-0 ${
-                    isDarkMode
-                      ? 'border-neutral-800/50 odd:bg-neutral-950/35 even:bg-neutral-900/10'
-                      : 'border-slate-200/60 odd:bg-slate-100/60 even:bg-white'
-                  }`}
+                  className='border-b transition-colors last:border-b-0'
+                  style={{
+                    backgroundColor: isDarkMode
+                      ? index % 2 === 0
+                        ? '#121212'
+                        : '#1a1a1a'
+                      : index % 2 === 0
+                        ? '#f8fafc'
+                        : '#ffffff',
+                    borderColor: isDarkMode
+                      ? 'rgba(64, 64, 64, 0.5)'
+                      : 'rgba(226, 232, 240, 0.6)',
+                  }}
                 >
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
                   <td className={`py-2.5 text-center font-bold ${THEME.textMuted}`}>{row.prev}</td>

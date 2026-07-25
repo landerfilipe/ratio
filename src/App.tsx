@@ -3152,9 +3152,7 @@ export default function App() {
       {/* Fixed Bottom Navigation - SÓLIDO COM LEVE TRANSLUCÊNCIA - HIDDEN IN ZEN MODE */}
       {!isZenMode && (
         <nav
-          className={`fixed bottom-0 left-0 right-0 border-t flex justify-around z-50 pb-safe transition-colors duration-200 backdrop-blur-sm ${
-            view === 'home' ? 'p-3' : 'p-2'
-          } ${
+          className={`fixed bottom-0 left-0 right-0 border-t flex justify-around z-50 p-2 pb-safe transition-colors duration-200 backdrop-blur-sm ${
             isDarkMode
               ? 'bg-neutral-950/95 border-neutral-800'
               : 'bg-white/95 border-slate-200'
@@ -3170,11 +3168,11 @@ export default function App() {
             }`}
           >
             <Home
-              className={view === 'home' ? 'h-6 w-6' : 'h-5 w-5'}
+              className='h-5 w-5'
               style={view === 'home' ? ICON_SOLID_STYLE : {}}
             />
             <span
-              className={view === 'home' ? 'text-xs font-bold' : 'text-[10px] font-bold'}
+              className='text-[10px] font-bold'
               style={{ color: view === 'home' ? ICON_SOLID_COLOR : '' }}
             >
               Início
