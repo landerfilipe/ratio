@@ -1443,10 +1443,10 @@ export default function App() {
         new Date().toDateString() === new Date(year, month, d).toDateString();
 
       // Determine dot color based on goal status (Light/Dark Yellow)
-      let dotColor = 'bg-[#EAB308]';
+      let dotColor = 'bg-[#EAB308E6]';
       if (hasData) {
         // #FDE047 is lighter yellow (met), #CA8A04 is darker yellow (not met) - Adjusted for contrast
-        dotColor = isGoalMet ? 'bg-[#FDE047]' : 'bg-[#CA8A04]';
+        dotColor = isGoalMet ? 'bg-[#FDE047E6]' : 'bg-[#CA8A04E6]';
       }
 
       days.push(
@@ -1459,7 +1459,7 @@ export default function App() {
           className={`h-10 w-10 max-[359px]:h-9 max-[359px]:w-9 sm:h-12 sm:w-12 mx-auto flex flex-col items-center justify-center relative rounded-full transition-all active:scale-95 duration-200
             ${
               isSelected
-                ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-md font-bold'
+                ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-md font-bold'
                 : `hover:bg-neutral-800 ${
                     isDarkMode
                       ? 'text-neutral-300'
@@ -1468,7 +1468,7 @@ export default function App() {
             } 
             ${
               isToday && !isSelected
-                ? `border border-[#EAB308] ${THEME.accentText}`
+                ? `border border-[#EAB308E6] ${THEME.accentText}`
                 : ''
             }`}
         >
@@ -1544,8 +1544,8 @@ export default function App() {
               x2='100%'
               y2='100%'
             >
-              <stop offset='0%' stopColor='#FDE047' />
-              <stop offset='100%' stopColor='#EAB308' />
+              <stop offset='0%' stopColor='#FDE047E6' />
+              <stop offset='100%' stopColor='#EAB308E6' />
             </linearGradient>
           </defs>
         </svg>
@@ -1566,7 +1566,7 @@ export default function App() {
           >
             Ratio
           </h1>
-          <p className='text-xs uppercase tracking-widest text-[#EAB308] font-bold mb-8'>
+          <p className='text-xs uppercase tracking-widest text-[#EAB308E6] font-bold mb-8'>
             Evolução Calculada
           </p>
           <button
@@ -1611,7 +1611,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen ${THEME.bg} ${THEME.text} font-sans pb-24 antialiased selection:bg-[#EAB308] selection:text-black transition-colors duration-200 ease-in-out`}
+      className={`min-h-screen ${THEME.bg} ${THEME.text} font-sans pb-24 antialiased selection:bg-[#EAB308E6] selection:text-black transition-colors duration-200 ease-in-out`}
       style={{ fontFamily: "'Outfit', sans-serif" }}
     >
       <style>{`
@@ -1645,8 +1645,8 @@ export default function App() {
             x2='100%'
             y2='100%'
           >
-            <stop offset='0%' stopColor='#FDE047' />
-            <stop offset='100%' stopColor='#EAB308' />
+            <stop offset='0%' stopColor='#FDE047E6' />
+            <stop offset='100%' stopColor='#EAB308E6' />
           </linearGradient>
         </defs>
       </svg>
@@ -1704,7 +1704,7 @@ export default function App() {
                   view === 'home' ? 'w-10 h-10' : 'w-8 h-8'
                 } rounded-full cursor-pointer shadow-sm active:scale-95 transition-transform mr-1 flex items-center justify-center ${
                   profile.photoUrl
-                    ? 'bg-gradient-to-tr from-[#FDE047] to-[#B45309] p-[1.5px]'
+                    ? 'bg-gradient-to-tr from-[#FDE047E6] to-[#B45309E6] p-[1.5px]'
                     : `bg-transparent border border-solid ${
                         isDarkMode ? 'border-neutral-700' : 'border-slate-300'
                       }`
@@ -1782,7 +1782,7 @@ export default function App() {
                     }}
                     className={`min-w-0 flex-1 px-0.5 py-2 rounded-xl whitespace-nowrap transition-all font-extrabold text-xs ${
                       timeRange === range
-                        ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-md'
+                        ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-md'
                         : `${THEME.textMuted} hover:text-neutral-200`
                     }`}
                   >
@@ -1854,7 +1854,7 @@ export default function App() {
               </div>
               <div className='w-full bg-neutral-800 rounded-full h-2 overflow-hidden'>
                 <div
-                  className='h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#FDE047] to-[#EAB308] shadow-[0_0_10px_rgba(234,179,8,0.3)]'
+                  className='h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#FDE047E6] to-[#EAB308E6] shadow-[0_0_10px_rgba(234,179,8,0.3)]'
                   style={{
                     width: `${Math.min(
                       stats.currentGoalMinutes > 0
@@ -1914,10 +1914,22 @@ export default function App() {
                   </div>
                   <svg
                     viewBox='0 0 64 64'
-                    className='h-[clamp(3.88rem,13.97vw,5.82rem)] w-[clamp(3.88rem,13.97vw,5.82rem)] shrink-0 opacity-90'
+                    className='h-[clamp(3.49rem,12.57vw,5.24rem)] w-[clamp(3.49rem,12.57vw,5.24rem)] shrink-0 opacity-80'
                     role='img'
                     aria-label={`Progresso de ${stats.goalPercentage}% da meta`}
                   >
+                    <defs>
+                      <linearGradient
+                        id='home-today-progress-gradient'
+                        x1='0%'
+                        y1='0%'
+                        x2='100%'
+                        y2='100%'
+                      >
+                        <stop offset='0%' stopColor='#FDE047' />
+                        <stop offset='100%' stopColor='#EAB308' />
+                      </linearGradient>
+                    </defs>
                     {[26, 18, 10].map((radius, index) => (
                       <React.Fragment key={radius}>
                         <circle
@@ -1933,7 +1945,7 @@ export default function App() {
                           cy='32'
                           r={radius}
                           fill='none'
-                          stroke='url(#gold-gradient)'
+                          stroke='url(#home-today-progress-gradient)'
                           strokeWidth={index === 0 ? 5 : 4}
                           strokeLinecap='round'
                           pathLength='100'
@@ -1956,7 +1968,7 @@ export default function App() {
                 <svg
                   viewBox='0 0 120 64'
                   preserveAspectRatio='none'
-                  className='absolute inset-x-4 bottom-11 h-20 w-[calc(100%-2rem)] opacity-70'
+                  className='absolute inset-x-4 bottom-11 h-20 w-[calc(100%-2rem)] opacity-80'
                   aria-hidden='true'
                 >
                   <defs>
@@ -2031,7 +2043,7 @@ export default function App() {
                           </div>
                           <div className='h-1.5 rounded-full bg-neutral-800 overflow-hidden'>
                             <div
-                              className='h-full rounded-full bg-gradient-to-r from-[#FDE047] to-[#EAB308]'
+                              className='h-full rounded-full bg-gradient-to-r from-[#FDE047E6] to-[#EAB308E6]'
                               style={{
                                 width: `${Math.max(
                                   (subject.minutes /
@@ -2077,7 +2089,7 @@ export default function App() {
 
             <section className={`${THEME.card} p-6 rounded-2xl border shadow-sm`}>
               <h2 className={`text-lg font-bold mb-6 flex items-center gap-2 ${THEME.text}`}>
-                <Plus className='h-5 w-5 bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black rounded-full p-1 shadow-sm' />
+                <Plus className='h-5 w-5 bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black rounded-full p-1 shadow-sm' />
                 Registrar Estudo
               </h2>
               <form onSubmit={handleAddSession} className='flex flex-col gap-4'>
@@ -2097,7 +2109,7 @@ export default function App() {
                         }}
                         onFocus={() => setShowSuggestions(true)}
                         placeholder='Pesquise...'
-                        className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium transition-all ${THEME.input} focus:border-[#EAB308] ${
+                        className={`w-full rounded-xl border p-4 pl-12 outline-none font-medium transition-all ${THEME.input} focus:border-[#EAB308E6] ${
                           formError ? 'border-red-500' : ''
                         }`}
                         required
@@ -2152,7 +2164,7 @@ export default function App() {
                       type='datetime-local'
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                       required
                     />
                   </div>
@@ -2166,7 +2178,7 @@ export default function App() {
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       placeholder='45'
-                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                       required
                     />
                   </div>
@@ -2175,7 +2187,7 @@ export default function App() {
                 <button
                   type='submit'
                   disabled={isSubmitting}
-                  className='w-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-bold py-4 px-4 rounded-xl shadow-lg transition-transform active:scale-95'
+                  className='w-full bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] hover:to-[#CA8A04E6] text-black font-bold py-4 px-4 rounded-xl shadow-lg transition-transform active:scale-95'
                 >
                   {isSubmitting ? '...' : 'Salvar'}
                 </button>
@@ -2204,7 +2216,7 @@ export default function App() {
                   onClick={() => handleModeToggle('stopwatch')}
                   className={`p-3 transition-all ${
                     timerMode === 'stopwatch'
-                      ? 'text-[#EAB308] scale-110'
+                      ? 'text-[#EAB308E6] scale-110'
                       : 'text-neutral-500 hover:text-neutral-400'
                   }`}
                   title='Cronômetro'
@@ -2215,7 +2227,7 @@ export default function App() {
                   onClick={() => handleModeToggle('countdown')}
                   className={`p-3 transition-all ${
                     timerMode === 'countdown'
-                      ? 'text-[#EAB308] scale-110'
+                      ? 'text-[#EAB308E6] scale-110'
                       : 'text-neutral-500 hover:text-neutral-400'
                   }`}
                   title='Pomodoro'
@@ -2268,8 +2280,8 @@ export default function App() {
                           x2='100%'
                           y2='100%'
                         >
-                          <stop offset='0%' stopColor='#FDE047' />
-                          <stop offset='100%' stopColor='#EAB308' />
+                          <stop offset='0%' stopColor='#FDE047E6' />
+                          <stop offset='100%' stopColor='#EAB308E6' />
                         </linearGradient>
                       </defs>
                       {/* Yellow Gradient Trail */}
@@ -2308,7 +2320,7 @@ export default function App() {
                             )
                         }
                         r='2'
-                        fill='#EAB308'
+                        fill='#EAB308E6'
                         className='transition-all duration-1000 ease-linear shadow-lg'
                       />
                     </>
@@ -2323,8 +2335,8 @@ export default function App() {
                           x2='100%'
                           y2='100%'
                         >
-                          <stop offset='0%' stopColor='#FDE047' />
-                          <stop offset='100%' stopColor='#EAB308' />
+                          <stop offset='0%' stopColor='#FDE047E6' />
+                          <stop offset='100%' stopColor='#EAB308E6' />
                         </linearGradient>
                       </defs>
                       <circle
@@ -2367,7 +2379,7 @@ export default function App() {
                             )
                         }
                         r='2'
-                        fill='#EAB308'
+                        fill='#EAB308E6'
                         className='transition-all duration-1000 ease-linear shadow-lg'
                       />
                     </>
@@ -2383,7 +2395,7 @@ export default function App() {
                     <span className='text-6xl sm:text-7xl'>
                       {formatTimeComponents(timerSeconds).main}
                     </span>
-                    <span className='text-xl sm:text-2xl mt-1 sm:mt-2 text-[#EAB308] opacity-90'>
+                    <span className='text-xl sm:text-2xl mt-1 sm:mt-2 text-[#EAB308E6]'>
                       {formatTimeComponents(timerSeconds).super}
                     </span>
                   </div>
@@ -2405,7 +2417,7 @@ export default function App() {
                       >
                         <ArrowDown className='h-4 w-4' />
                       </button>
-                      <span className='text-xl font-bold text-[#EAB308]'>
+                      <span className='text-xl font-bold text-[#EAB308E6]'>
                         {countdownInitialMinutes}m
                       </span>
                       <button
@@ -2477,14 +2489,14 @@ export default function App() {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder='Selecione a disciplina...'
-                  className={`w-full text-sm rounded-xl py-3 pl-10 pr-4 outline-none focus:border-[#EAB308] transition-all text-center shadow-lg backdrop-blur-sm ${
+                  className={`w-full text-sm rounded-xl py-3 pl-10 pr-4 outline-none focus:border-[#EAB308E6] transition-all text-center shadow-lg backdrop-blur-sm ${
                     isDarkMode
                       ? 'bg-neutral-900/80 border border-neutral-800 text-neutral-300 placeholder-neutral-600 focus:bg-neutral-900'
                       : 'bg-white/80 border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white'
                   }`}
                 />
                 <Search
-                  className={`h-4 w-4 absolute left-3 top-3.5 group-focus-within:text-[#EAB308] transition-colors ${
+                  className={`h-4 w-4 absolute left-3 top-3.5 group-focus-within:text-[#EAB308E6] transition-colors ${
                     isDarkMode ? 'text-neutral-500' : 'text-slate-400'
                   }`}
                 />
@@ -2531,7 +2543,7 @@ export default function App() {
                   (timerMode === 'countdown' &&
                     timerSeconds === countdownInitialMinutes * 60)
                 }
-                className='w-full max-w-sm bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-bold py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(234,179,8,0.2)] transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 flex-shrink-0'
+                className='w-full max-w-sm bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] hover:to-[#CA8A04E6] text-black font-bold py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(234,179,8,0.2)] transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 flex-shrink-0'
               >
                 <Save className='h-5 w-5' /> SALVAR SESSÃO
               </button>
@@ -2662,7 +2674,7 @@ export default function App() {
                 </div>
                 <div className='text-right'>
                   {/* Animação sutil no número total do dia */}
-                  <div className='text-xl font-bold text-[#EAB308] animate-in fade-in slide-in-from-bottom-1 duration-500'>
+                  <div className='text-xl font-bold text-[#EAB308E6] animate-in fade-in slide-in-from-bottom-1 duration-500'>
                     {formatDurationDetailed(selectedDayTotal)}
                   </div>
                   <span className={`text-xs ${THEME.textMuted} font-bold`}>
@@ -2692,7 +2704,7 @@ export default function App() {
                       <div className='flex items-center gap-2'>
                         <SubjectIcon
                           subject={session.subject}
-                          className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                          className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15E6] p-1.5'
                           color='#0a0a0a'
                         />
                         <div>
@@ -2748,7 +2760,7 @@ export default function App() {
                     placeholder='Buscar disciplina...'
                     value={historySearch}
                     onChange={(e) => setHistorySearch(e.target.value)}
-                    className={`w-full rounded-xl border px-3 py-2 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                    className={`w-full rounded-xl border px-3 py-2 outline-none text-sm font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                   />
                 </div>
                 {filteredHistorySessions.length === 0 && historySearch ? (
@@ -2780,7 +2792,7 @@ export default function App() {
                                 setEditSubjectInput(e.target.value);
                                 setEditError(null);
                               }}
-                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                             />
                           </div>
                           <div className='md:col-span-2'>
@@ -2796,7 +2808,7 @@ export default function App() {
                                 setEditDate(e.target.value);
                                 setEditError(null);
                               }}
-                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                             />
                           </div>
                           <div>
@@ -2813,7 +2825,7 @@ export default function App() {
                                 setEditDuration(e.target.value);
                                 setEditError(null);
                               }}
-                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308] ${THEME.input}`}
+                              className={`w-full rounded-xl border p-3 outline-none text-sm font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                             />
                           </div>
                         </div>
@@ -2836,11 +2848,11 @@ export default function App() {
                               setApplySubjectToAll(e.target.checked)
                             }
                             disabled={editOriginalSubject === editSubjectInput}
-                            className='mt-0.5 accent-[#EAB308]'
+                            className='mt-0.5 accent-[#EAB308E6]'
                           />
                           <span>
                             Aplicar troca de disciplina a todas as sessões de{' '}
-                            <span className='text-[#EAB308]'>
+                            <span className='text-[#EAB308E6]'>
                               {editOriginalSubject}
                             </span>
                           </span>
@@ -2864,7 +2876,7 @@ export default function App() {
                           </button>
                           <button
                             onClick={() => handleSaveEditedSession(session.id)}
-                            className='px-3 py-2 rounded-lg text-xs font-bold bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black'
+                            className='px-3 py-2 rounded-lg text-xs font-bold bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black'
                           >
                             Salvar
                           </button>
@@ -2875,17 +2887,17 @@ export default function App() {
                         <div className='flex flex-1 min-w-0 items-center gap-2 pr-4'>
                           <SubjectIcon
                             subject={session.subject}
-                            className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15] p-1.5'
+                            className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15E6] p-1.5'
                             color='#0a0a0a'
                           />
                           <div className='min-w-0'>
                             <h3
-                              className={`font-bold text-sm break-words leading-tight ${THEME.text}`}
+                              className={`font-bold text-[13px] break-words leading-tight ${THEME.text}`}
                             >
                               {session.subject}
                             </h3>
                             <p
-                              className={`text-[11.5px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                              className={`text-[11px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
                             >
                               <History className='h-3 w-3' />{' '}
                               {new Date(session.date).toLocaleDateString(
@@ -2904,7 +2916,7 @@ export default function App() {
                         </div>
                         <div className='flex items-center gap-2'>
                           <span
-                            className={`px-2 py-1 rounded text-[11.5px] font-bold whitespace-nowrap ${
+                            className={`px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap ${
                               isDarkMode
                                 ? 'bg-neutral-800 text-neutral-300'
                                 : 'bg-white border text-slate-600'
@@ -2915,7 +2927,7 @@ export default function App() {
                           <button
                             onClick={() => handleStartEditSession(session)}
                             aria-label='Editar sessão'
-                            className={`text-neutral-500 hover:text-[#EAB308] transition p-2 rounded-full ${
+                            className={`text-neutral-500 hover:text-[#EAB308E6] transition p-2 rounded-full ${
                               isDarkMode
                                 ? 'hover:bg-neutral-800'
                                 : 'hover:bg-yellow-50'
@@ -2968,7 +2980,7 @@ export default function App() {
             <div
               className={`${THEME.card} rounded-2xl border shadow-sm overflow-hidden`}
             >
-              <div className='bg-[#EAB308] h-32 w-full relative'>
+              <div className='bg-[#EAB308E6] h-32 w-full relative'>
                 <div className='absolute -bottom-12 left-1/2 -translate-x-1/2'>
                   {/* NOVA LÓGICA DE PERFIL (Conforme Solicitado):
                             Sempre renderiza o círculo de gradiente (bg-gradient-to-tr).
@@ -2976,7 +2988,7 @@ export default function App() {
                             Se não tiver -> Renderiza <UserIcon> dentro (sem fundo branco extra, usando o padrão do tema para o container interno).
                         */}
                   <div
-                    className={`w-24 h-24 rounded-full bg-gradient-to-tr from-[#FDE047] to-[#B45309] p-[2px] overflow-hidden relative group shadow-lg`}
+                    className={`w-24 h-24 rounded-full bg-gradient-to-tr from-[#FDE047E6] to-[#B45309E6] p-[2px] overflow-hidden relative group shadow-lg`}
                   >
                     <div
                       className={`w-full h-full rounded-full p-[1.5px] ${
@@ -3056,7 +3068,7 @@ export default function App() {
                     onChange={(e) =>
                       setProfile({ ...profile, name: e.target.value })
                     }
-                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                   />
                 </div>
                 <div>
@@ -3071,7 +3083,7 @@ export default function App() {
                     onChange={(e) =>
                       setProfile({ ...profile, surname: e.target.value })
                     }
-                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                   />
                 </div>
                 <div>
@@ -3086,7 +3098,7 @@ export default function App() {
                     onChange={(e) =>
                       setProfile({ ...profile, birthdate: e.target.value })
                     }
-                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                   />
                 </div>
                 <div>
@@ -3102,7 +3114,7 @@ export default function App() {
                     onChange={(e) =>
                       setProfile({ ...profile, location: e.target.value })
                     }
-                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308] ${THEME.input}`}
+                    className={`w-full rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                   />
                 </div>
                 <div>
@@ -3131,7 +3143,7 @@ export default function App() {
                     onChange={(e) =>
                       setProfile({ ...profile, bio: e.target.value })
                     }
-                    className={`w-full rounded-xl border p-4 outline-none font-medium resize-none focus:border-[#EAB308] ${THEME.input}`}
+                    className={`w-full rounded-xl border p-4 outline-none font-medium resize-none focus:border-[#EAB308E6] ${THEME.input}`}
                   />
                 </div>
               </div>
@@ -3139,7 +3151,7 @@ export default function App() {
               <button
                 type='submit'
                 disabled={isSavingProfile}
-                className='w-full bg-gradient-to-br from-[#FDE047] to-[#EAB308] hover:to-[#CA8A04] text-black font-bold py-4 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-50'
+                className='w-full bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] hover:to-[#CA8A04E6] text-black font-bold py-4 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-50'
               >
                 <Save className='h-4 w-4' />
                 {isSavingProfile ? 'Salvando...' : 'Salvar Alterações'}

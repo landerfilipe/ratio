@@ -308,7 +308,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <td className={`py-2.5 font-bold ${THEME.text}`}>{row.label}</td>
                   <td className={`py-2.5 text-center font-bold ${THEME.textMuted}`}>{row.prev}</td>
                   <td className='py-2.5 text-center'>
-                    <span className='font-bold text-[#EAB308]'>
+                    <span className='font-bold text-[#EAB308E6]'>
                       {row.current}
                     </span>
                   </td>
@@ -335,8 +335,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             <BarChart data={stats.comparativeData} margin={{ top: 5, right: 10, bottom: 5, left: -15 }}>
               <defs>
                 <linearGradient id='chartGradient' x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset='0%' stopColor='#FDE047' />
-                  <stop offset='100%' stopColor='#EAB308' />
+                  <stop offset='0%' stopColor='#FDE047E6' />
+                  <stop offset='100%' stopColor='#EAB308E6' />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray='3 3' vertical={false} stroke={isDarkMode ? '#333' : '#eee'} />
@@ -389,7 +389,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               key={idx}
               title={`${new Date(day.date).toLocaleDateString()}: ${formatDurationDetailed(day.count)}`}
               className={`w-2 h-2 sm:w-3 sm:h-3 rounded-[1px] transition-all duration-300 hover:scale-125 ${
-                day.isGoalMet ? 'border border-[#EAB308] shadow-[0_0_5px_#EAB308]' : ''
+                day.isGoalMet ? 'border border-[#EAB308E6] shadow-[0_0_5px_#EAB308E6]' : ''
               }`}
               style={{ backgroundColor: HEATMAP_COLORS[day.level] }}
             ></div>
@@ -438,9 +438,9 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <button
                 key={range}
                 onClick={() => { setLineChartRange(range); triggerHaptic(); }}
-                className={`px-2 py-1 rounded-full transition font-bold whitespace-nowrap ${
+                className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
                   lineChartRange === range
-                    ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
+                    ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-sm'
                     : `${THEME.textMuted}`
                 }`}
               >
@@ -460,8 +460,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             <LineChart data={stats.lineChartData} margin={{ top: 5, right: 10, bottom: 5, left: -15 }}>
               <defs>
                 <linearGradient id='chartGradient' x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset='0%' stopColor='#FDE047' />
-                  <stop offset='100%' stopColor='#EAB308' />
+                  <stop offset='0%' stopColor='#FDE047E6' />
+                  <stop offset='100%' stopColor='#EAB308E6' />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray='3 3' vertical={false} stroke={isDarkMode ? '#333' : '#eee'} />
@@ -525,9 +525,9 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               <button
                 key={range}
                 onClick={() => { setDailyRhythmRange(range); triggerHaptic(); }}
-                className={`px-2 py-1 rounded-full transition font-bold whitespace-nowrap ${
+                className={`px-2 py-1 rounded transition font-bold whitespace-nowrap ${
                   dailyRhythmRange === range
-                    ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
+                    ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-sm'
                     : `${THEME.textMuted}`
                 }`}
               >
@@ -547,8 +547,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             <ComposedChart data={stats.dailyRhythmData} margin={{ top: 5, right: 10, bottom: 5, left: -15 }}>
               <defs>
                 <linearGradient id='chartGradient' x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset='0%' stopColor='#FDE047' />
-                  <stop offset='100%' stopColor='#EAB308' />
+                  <stop offset='0%' stopColor='#FDE047E6' />
+                  <stop offset='100%' stopColor='#EAB308E6' />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray='3 3' vertical={false} stroke={isDarkMode ? '#333' : '#eee'} />
@@ -593,9 +593,9 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
           <div className={`flex p-0.5 gap-0.5 rounded-lg flex-shrink-0 ${isDarkMode ? 'bg-neutral-900' : 'bg-slate-100'}`}>
             <button
               onClick={() => { setChartType('pie'); triggerHaptic(); }}
-              className={`p-1.5 rounded-full ${
+              className={`p-1.5 rounded ${
                 chartType === 'pie'
-                  ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
+                  ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-sm'
                   : `${THEME.textMuted}`
               }`}
             >
@@ -603,9 +603,9 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
             <button
               onClick={() => { setChartType('radar'); triggerHaptic(); }}
-              className={`p-1.5 rounded-full ${
+              className={`p-1.5 rounded ${
                 chartType === 'radar'
-                  ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
+                  ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-sm'
                   : `${THEME.textMuted}`
               }`}
             >
@@ -613,9 +613,9 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
             <button
               onClick={() => { setChartType('bar'); triggerHaptic(); }}
-              className={`p-1.5 rounded-full ${
+              className={`p-1.5 rounded ${
                 chartType === 'bar'
-                  ? 'bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black shadow-sm'
+                  ? 'bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black shadow-sm'
                   : `${THEME.textMuted}`
               }`}
             >
@@ -663,8 +663,8 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                 <RadarChart cx='50%' cy='50%' outerRadius='65%' data={stats.radarData}>
                   <defs>
                     <linearGradient id='chartGradient' x1='0' y1='0' x2='1' y2='0'>
-                      <stop offset='0%' stopColor='#FDE047' />
-                      <stop offset='100%' stopColor='#EAB308' />
+                      <stop offset='0%' stopColor='#FDE047E6' />
+                      <stop offset='100%' stopColor='#EAB308E6' />
                     </linearGradient>
                   </defs>
                   <PolarGrid stroke={isDarkMode ? '#333' : '#eee'} />
@@ -759,7 +759,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               className={`flex justify-between items-center py-3 border-b ${isDarkMode ? 'border-neutral-800' : 'border-slate-200'} last:border-b-0`}
             >
               <div className='flex items-center gap-2 overflow-hidden'>
-                <span className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FACC15]'>
+                <span className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
                   <SubjectIcon
                     subject={item.name}
                     className='h-3.5 w-3.5'
@@ -772,7 +772,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                 <span className={`px-1.5 py-0.5 rounded whitespace-nowrap ${isDarkMode ? 'bg-neutral-800 text-neutral-300' : 'bg-white text-slate-600 border'}`}>
                   {item.hours}
                 </span>
-                <span className='px-1.5 py-0.5 bg-gradient-to-br from-[#FDE047] to-[#EAB308] text-black rounded min-w-[2.5rem] text-center'>
+                <span className='px-1.5 py-0.5 bg-gradient-to-br from-[#FDE047E6] to-[#EAB308E6] text-black rounded min-w-[2.5rem] text-center'>
                   {item.percentage}%
                 </span>
               </div>
