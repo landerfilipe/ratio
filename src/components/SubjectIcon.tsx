@@ -13,7 +13,7 @@ import {
   Radical,
   ScrollText,
   Sigma,
-  Terminal,
+  SquareTerminal,
   type LucideIcon,
 } from 'lucide-react';
 import { ICON_SOLID_COLOR } from '../lib/theme';
@@ -28,7 +28,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Filosofia: Lightbulb,
   História: ScrollText,
   Inglês: Languages,
-  'Engenharia (IA)': Terminal,
+  'Engenharia (IA)': SquareTerminal,
   Lógica: MoveHorizontal,
   Matemática: Radical,
   Português: CaseUpper,
