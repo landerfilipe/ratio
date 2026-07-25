@@ -1367,7 +1367,11 @@ export default function App() {
       subjectMinutes,
       ([name, minutes]) => ({ name, minutes })
     ).sort((a, b) => b.minutes - a.minutes);
-    const topSubjects = chartSortedSubjects.slice(0, 5);
+    const topSubjects = chartSortedSubjects.slice(0, 3);
+    const totalSubjectMinutes = chartSortedSubjects.reduce(
+      (total, subject) => total + subject.minutes,
+      0
+    );
 
     const minutesByDay = new Map<string, number>();
     sessions.forEach((session) => {
@@ -1405,7 +1409,7 @@ export default function App() {
       });
     const sparklinePath = getSmoothSvgPath(sparklineCoordinates);
 
-    return { topSubjects, streak, sparklinePath };
+    return { topSubjects, totalSubjectMinutes, streak, sparklinePath };
   }, [sessions]);
 
   // --- Theme Colors (imported from lib/theme.ts) ---
@@ -1885,7 +1889,7 @@ export default function App() {
             </section>
 
             <section className='grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
-              <article className={`${THEME.card} ratio-home-card min-h-40 p-5 max-[480px]:p-3 rounded-3xl border relative overflow-hidden`}>
+              <article className={`${THEME.card} ratio-home-card h-[156px] sm:h-[180px] p-5 max-[480px]:p-3 rounded-3xl border relative overflow-hidden`}>
                 <div className={`flex items-center gap-2 ${THEME.textMuted}`}>
                   <Clock className='h-5 w-5 max-[480px]:h-4 max-[480px]:w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-sm sm:text-base max-[480px]:text-xs font-extrabold uppercase tracking-wide'>
@@ -1898,7 +1902,7 @@ export default function App() {
                 >
                   {stats.goalPercentage}%
                 </div>
-                <div className='mt-7 max-[480px]:mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-0'>
+                <div className='absolute inset-x-5 max-[480px]:inset-x-3 top-1/2 -translate-y-1/2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-0'>
                   <div className={`min-w-0 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
                     {formatDurationDetailed(
                       timeRange === 'day'
@@ -1908,7 +1912,7 @@ export default function App() {
                   </div>
                   <svg
                     viewBox='0 0 64 64'
-                    className='h-[clamp(3.75rem,13.5vw,5.625rem)] w-[clamp(3.75rem,13.5vw,5.625rem)] shrink-0 opacity-90'
+                    className='h-[clamp(3.88rem,13.97vw,5.82rem)] w-[clamp(3.88rem,13.97vw,5.82rem)] shrink-0 opacity-90'
                     role='img'
                     aria-label={`Progresso de ${stats.goalPercentage}% da meta`}
                   >
@@ -1940,7 +1944,7 @@ export default function App() {
                 </div>
               </article>
 
-              <article className={`${THEME.card} ratio-home-card min-h-40 p-5 max-[480px]:p-3 rounded-3xl border relative overflow-hidden`}>
+              <article className={`${THEME.card} ratio-home-card h-[156px] sm:h-[180px] p-5 max-[480px]:p-3 rounded-3xl border relative overflow-hidden`}>
                 <div className={`flex items-center gap-2 ${THEME.textMuted}`}>
                   <TrendingUp className='h-5 w-5 max-[480px]:h-4 max-[480px]:w-4' style={ICON_SOLID_STYLE} />
                   <span className='text-sm sm:text-base max-[480px]:text-xs font-extrabold uppercase tracking-wide'>
@@ -1976,7 +1980,7 @@ export default function App() {
                     strokeLinejoin='round'
                   />
                 </svg>
-                <div className={`relative z-10 mt-7 max-[480px]:mt-6 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
+                <div className={`absolute z-10 left-5 max-[480px]:left-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-[clamp(1.25rem,4.8vw,2.25rem)] leading-none font-extrabold tracking-tight ${THEME.text}`}>
                   {formatDurationDetailed(
                     timeRange === 'day' ? stats.totalMinutes : stats.rangeMinutes
                   )}
@@ -1999,7 +2003,7 @@ export default function App() {
             </section>
 
             <section className='grid grid-cols-2 max-[359px]:grid-cols-1 gap-4'>
-              <article className={`${THEME.card} ratio-home-card min-h-52 p-4 rounded-3xl border overflow-hidden`}>
+              <article className={`${THEME.card} ratio-home-card h-[156px] sm:h-[180px] p-4 rounded-3xl border overflow-hidden flex flex-col`}>
                 <h3 className={`text-sm sm:text-xl leading-tight font-extrabold ${THEME.textMuted}`}>
                   Principais Matérias
                 </h3>
@@ -2007,11 +2011,9 @@ export default function App() {
                   <div
                     className='mt-4 flex flex-col justify-center gap-2.5'
                     role='img'
-                    aria-label='Cinco matérias com maior tempo registrado'
+                    aria-label='Três matérias com maior tempo registrado'
                   >
                     {homeInsights.topSubjects.map((subject) => {
-                      const largestSubjectMinutes =
-                        homeInsights.topSubjects[0]?.minutes || 1;
                       return (
                         <div key={subject.name} className='min-w-0'>
                           <div className={`mb-1 flex items-center justify-between gap-2 text-[9px] sm:text-xs font-bold ${THEME.textMuted}`}>
@@ -2030,7 +2032,9 @@ export default function App() {
                               className='h-full rounded-full bg-gradient-to-r from-[#FDE047] to-[#EAB308]'
                               style={{
                                 width: `${Math.max(
-                                  (subject.minutes / largestSubjectMinutes) * 100,
+                                  (subject.minutes /
+                                    Math.max(homeInsights.totalSubjectMinutes, 1)) *
+                                    100,
                                   4
                                 )}%`,
                               }}
@@ -2041,7 +2045,7 @@ export default function App() {
                     })}
                   </div>
                 ) : (
-                  <div className='h-full flex flex-col items-center justify-center text-center px-2'>
+                  <div className='flex-1 flex flex-col items-center justify-center text-center px-2'>
                     <Activity className='h-8 w-8 mb-3' style={ICON_SOLID_STYLE} />
                     <p className={`text-sm font-bold ${THEME.textMuted}`}>
                       Registre estudos para ver a distribuição.
@@ -2050,17 +2054,18 @@ export default function App() {
                 )}
               </article>
 
-              <article className={`${THEME.card} ratio-home-card min-h-52 p-6 rounded-3xl border relative`}>
+              <article className={`${THEME.card} ratio-home-card h-[156px] sm:h-[180px] p-6 rounded-3xl border relative`}>
                 <div className='flex items-center justify-between gap-3'>
-                  <h3 className={`text-[16px] sm:text-[22px] leading-tight font-extrabold ${THEME.textMuted}`}>
+                  <h3 className={`relative top-1 text-[16px] sm:text-[22px] leading-tight font-extrabold ${THEME.textMuted}`}>
                     Sequência
                   </h3>
                   <Flame className='h-7 w-7 shrink-0' style={ICON_SOLID_STYLE} />
                 </div>
-                <p className={`mt-8 text-4xl font-extrabold ${THEME.text}`}>
-                  {homeInsights.streak}
+                <p className={`mt-5 flex items-center gap-1 font-extrabold ${THEME.text}`}>
+                  <span className='text-4xl'>{homeInsights.streak}</span>
+                  <span className='text-xs'>dias</span>
                 </p>
-                <p className={`mt-5 text-[10px] sm:text-base font-medium ${THEME.textMuted}`}>
+                <p className={`mt-3 text-[10px] sm:text-base font-medium ${THEME.textMuted}`}>
                   {homeInsights.streak > 0
                     ? 'Mantenha a consistência!'
                     : 'Comece sua sequência hoje!'}
