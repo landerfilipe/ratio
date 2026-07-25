@@ -2880,12 +2880,12 @@ export default function App() {
                           />
                           <div className='min-w-0'>
                             <h3
-                              className={`font-bold text-base break-words leading-tight ${THEME.text}`}
+                              className={`font-bold text-sm break-words leading-tight ${THEME.text}`}
                             >
                               {session.subject}
                             </h3>
                             <p
-                              className={`text-xs ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                              className={`text-[11.5px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
                             >
                               <History className='h-3 w-3' />{' '}
                               {new Date(session.date).toLocaleDateString(
@@ -2904,7 +2904,7 @@ export default function App() {
                         </div>
                         <div className='flex items-center gap-2'>
                           <span
-                            className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${
+                            className={`px-2 py-1 rounded text-[11.5px] font-bold whitespace-nowrap ${
                               isDarkMode
                                 ? 'bg-neutral-800 text-neutral-300'
                                 : 'bg-white border text-slate-600'
@@ -3152,7 +3152,7 @@ export default function App() {
       {/* Fixed Bottom Navigation - SÓLIDO COM LEVE TRANSLUCÊNCIA - HIDDEN IN ZEN MODE */}
       {!isZenMode && (
         <nav
-          className={`fixed bottom-0 left-0 right-0 border-t flex justify-around z-50 p-2 pb-safe transition-colors duration-200 backdrop-blur-sm ${
+          className={`fixed bottom-0 left-0 right-0 border-t flex justify-around z-50 px-2 py-[5px] pb-safe transition-colors duration-200 backdrop-blur-sm ${
             isDarkMode
               ? 'bg-neutral-950/95 border-neutral-800'
               : 'bg-white/95 border-slate-200'
