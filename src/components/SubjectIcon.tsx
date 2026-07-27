@@ -1,22 +1,33 @@
 import {
-  Ampersands,
   BookOpen,
   Brain,
   CaseUpper,
   ChessQueen,
-  ChevronsLeftRightEllipsis,
   Euro,
+  Feather,
   FlaskConical,
   GraduationCap,
+  Hourglass,
   Languages,
-  Lightbulb,
   Microscope,
+  MoveHorizontal,
+  Quote,
   Radical,
-  ScrollText,
   Sigma,
+  createLucideIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { ICON_SOLID_COLOR } from '../lib/theme';
+
+const Astroid = createLucideIcon('astroid', [
+  [
+    'path',
+    {
+      d: 'M12.983 21.186a1 1 0 0 1-1.966 0 10 10 0 0 0-8.203-8.203 1 1 0 0 1 0-1.966 10 10 0 0 0 8.203-8.203 1 1 0 0 1 1.966 0 10 10 0 0 0 8.203 8.203 1 1 0 0 1 0 1.966 10 10 0 0 0-8.203 8.203',
+      key: '1tipus',
+    },
+  ],
+]);
 
 const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Bíblia: BookOpen,
@@ -25,11 +36,13 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Epistemologia: Microscope,
   Estatística: Sigma,
   Estratégia: ChessQueen,
-  Filosofia: Lightbulb,
-  História: ScrollText,
+  Filosofia: Quote,
+  História: Hourglass,
   Inglês: Languages,
-  'Engenharia (IA)': ChevronsLeftRightEllipsis,
-  Lógica: Ampersands,
+  'Engenharia (IA)': Astroid,
+  'Inteligência Artificial': Astroid,
+  Literatura: Feather,
+  Lógica: MoveHorizontal,
   Matemática: Radical,
   Português: CaseUpper,
   'Provas e Carreira': GraduationCap,

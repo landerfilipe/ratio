@@ -2702,11 +2702,13 @@ export default function App() {
                       }`}
                     >
                       <div className='flex items-center gap-2'>
-                        <SubjectIcon
-                          subject={session.subject}
-                          className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15E6] p-1.5'
-                          color='#0a0a0a'
-                        />
+                        <span className='relative -top-0.5 flex h-[30.6px] w-[30.6px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
+                          <SubjectIcon
+                            subject={session.subject}
+                            className='h-[15.3px] w-[15.3px]'
+                            color='#0a0a0a'
+                          />
+                        </span>
                         <div>
                           <h4 className={`font-bold ${THEME.text} text-sm`}>
                             {session.subject}
@@ -2885,19 +2887,21 @@ export default function App() {
                     ) : (
                       <div className='flex items-center justify-between'>
                         <div className='flex flex-1 min-w-0 items-center gap-2 pr-4'>
-                          <SubjectIcon
-                            subject={session.subject}
-                            className='relative -top-0.5 h-[30.6px] w-[30.6px] shrink-0 rounded-full bg-[#FACC15E6] p-1.5'
-                            color='#0a0a0a'
-                          />
+                          <span className='relative -top-0.5 flex h-[30.6px] w-[30.6px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
+                            <SubjectIcon
+                              subject={session.subject}
+                              className='h-[15.3px] w-[15.3px]'
+                              color='#0a0a0a'
+                            />
+                          </span>
                           <div className='min-w-0'>
                             <h3
-                              className={`font-bold text-[13px] break-words leading-tight ${THEME.text}`}
+                              className={`font-bold text-[12.5px] break-words leading-tight ${THEME.text}`}
                             >
                               {session.subject}
                             </h3>
                             <p
-                              className={`text-[11px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                              className={`text-[10.5px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
                             >
                               <History className='h-3 w-3' />{' '}
                               {new Date(session.date).toLocaleDateString(
@@ -2916,7 +2920,7 @@ export default function App() {
                         </div>
                         <div className='flex items-center gap-2'>
                           <span
-                            className={`px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap ${
+                            className={`px-2 py-1 rounded text-[10.5px] font-bold whitespace-nowrap ${
                               isDarkMode
                                 ? 'bg-neutral-800 text-neutral-300'
                                 : 'bg-white border text-slate-600'
