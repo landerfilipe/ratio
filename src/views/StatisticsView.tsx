@@ -46,6 +46,15 @@ import { formatDurationDetailed, formatAxisTick, triggerHaptic } from '../lib/he
 import type { CustomTickProps, TimeRange, SortOrder } from '../types';
 import { SubjectIcon } from '../components/SubjectIcon';
 
+const WHITE_ICON_LEGEND_BACKGROUNDS = new Set([
+  COLORS[2],
+  COLORS[3],
+  COLORS[4],
+  COLORS[10],
+  COLORS[11],
+  '#525252',
+]);
+
 const STATISTICS_RANGE_TABS: { range: TimeRange; label: string }[] = [
   { range: '7_days',   label: '7d' },
   { range: '14_days',  label: '14d' },
@@ -176,9 +185,9 @@ const createCustomRadarTick = (isDarkMode: boolean) => {
             y={index * 10}
             dy={0}
             textAnchor={textAnchor}
-            fill={isDarkMode ? '#d4d4d4' : '#334155'}
+            fill={isDarkMode ? '#a3a3a3' : '#64748b'}
             fontSize={9}
-            fontWeight={600}
+            fontWeight={500}
           >
             {line}
           </text>
@@ -232,26 +241,31 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
     <ul
       className={`flex flex-wrap justify-center gap-2 mt-4 text-xs ${THEME.textMuted}`}
     >
-      {(stats.pieLegendData || []).map((entry: ChartDataItem, index: number) => (
-        <li key={index} className='flex items-center gap-1'>
-          <span
-            className='flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full'
-            style={{
-              backgroundColor:
-                entry.name === 'Outras Matérias'
-                  ? '#525252'
-                  : COLORS[index % COLORS.length],
-            }}
-          >
-            <SubjectIcon
-              subject={entry.name}
-              className='h-[9px] w-[9px]'
-              color='#0a0a0a'
-            />
-          </span>
-          <span className='truncate max-w-[100px] font-medium'>{entry.name}</span>
-        </li>
-      ))}
+      {(stats.pieLegendData || []).map((entry: ChartDataItem, index: number) => {
+        const backgroundColor =
+          entry.name === 'Outras Matérias'
+            ? '#525252'
+            : COLORS[index % COLORS.length];
+        const iconColor = WHITE_ICON_LEGEND_BACKGROUNDS.has(backgroundColor)
+          ? '#ffffff'
+          : '#0a0a0a';
+
+        return (
+          <li key={index} className='flex items-center gap-1'>
+            <span
+              className='flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full'
+              style={{ backgroundColor }}
+            >
+              <SubjectIcon
+                subject={entry.name}
+                className='h-[9px] w-[9px]'
+                color={iconColor}
+              />
+            </span>
+            <span className='truncate max-w-[100px] font-medium'>{entry.name}</span>
+          </li>
+        );
+      })}
     </ul>
   );
 
@@ -288,18 +302,11 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {(stats.evolutionReport || []).map((row: EvolutionReportItem, index: number) => (
+              {(stats.evolutionReport || []).map((row: EvolutionReportItem) => (
                 <tr
                   key={row.days}
                   className='border-b transition-colors last:border-b-0'
                   style={{
-                    backgroundColor: isDarkMode
-                      ? index % 2 === 0
-                        ? '#121212'
-                        : '#1a1a1a'
-                      : index % 2 === 0
-                        ? '#f8fafc'
-                        : '#ffffff',
                     borderColor: isDarkMode
                       ? 'rgba(64, 64, 64, 0.5)'
                       : 'rgba(226, 232, 240, 0.6)',
