@@ -2720,10 +2720,10 @@ export default function App() {
                       }`}
                     >
                       <div className='flex items-center gap-2'>
-                        <span className='relative -top-px flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
+                        <span className='relative -top-px flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
                           <SubjectIcon
                             subject={session.subject}
-                            className='h-[15px] w-[15px]'
+                            className='h-[16px] w-[16px]'
                             color='#0a0a0a'
                           />
                         </span>
@@ -2905,10 +2905,10 @@ export default function App() {
                     ) : (
                       <div className='flex items-center justify-between'>
                         <div className='flex flex-1 min-w-0 items-center gap-2 pr-4'>
-                          <span className='relative -top-px flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
+                          <span className='relative -top-px flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
                             <SubjectIcon
                               subject={session.subject}
-                              className='h-[15px] w-[15px]'
+                              className='h-[16px] w-[16px]'
                               color='#0a0a0a'
                             />
                           </span>
