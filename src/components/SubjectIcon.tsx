@@ -10,7 +10,7 @@ import {
   Hourglass,
   Languages,
   Microscope,
-  MoveHorizontal,
+  Puzzle,
   Quote,
   Radical,
   Sigma,
@@ -18,6 +18,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { ICON_SOLID_COLOR } from '../lib/theme';
+
+const anthropicIcon = new URL(
+  '../assets/subject-icons/anthropic.svg',
+  import.meta.url
+).href;
 
 const Astroid = createLucideIcon('astroid', [
   [
@@ -42,7 +47,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   'Engenharia (IA)': Astroid,
   'Inteligência Artificial': Astroid,
   Literatura: Feather,
-  Lógica: MoveHorizontal,
+  Lógica: Puzzle,
   Matemática: Radical,
   Português: CaseUpper,
   'Provas e Carreira': GraduationCap,
@@ -60,6 +65,26 @@ export const SubjectIcon = ({
   className = 'h-4 w-4',
   color = ICON_SOLID_COLOR,
 }: SubjectIconProps) => {
+  if (subject === 'IA | Engenharia') {
+    return (
+      <span
+        aria-hidden='true'
+        className={`${className} inline-block`}
+        style={{
+          backgroundColor: color,
+          WebkitMaskImage: `url("${anthropicIcon}")`,
+          WebkitMaskPosition: 'center',
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskSize: 'contain',
+          maskImage: `url("${anthropicIcon}")`,
+          maskPosition: 'center',
+          maskRepeat: 'no-repeat',
+          maskSize: 'contain',
+        }}
+      />
+    );
+  }
+
   const Icon = SUBJECT_ICONS[subject] ?? BookOpen;
 
   return (

@@ -39,6 +39,7 @@ import {
   AlertCircle,
   Home,
   Activity,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   User as UserIcon,
@@ -1369,11 +1370,7 @@ export default function App() {
       subjectMinutes,
       ([name, minutes]) => ({ name, minutes })
     ).sort((a, b) => b.minutes - a.minutes);
-    const topSubjects = chartSortedSubjects.slice(0, 3);
-    const totalSubjectMinutes = chartSortedSubjects.reduce(
-      (total, subject) => total + subject.minutes,
-      0
-    );
+    const topSubjects = chartSortedSubjects.slice(0, 5);
 
     const minutesByDay = new Map<string, number>();
     sessions.forEach((session) => {
@@ -1411,7 +1408,7 @@ export default function App() {
       });
     const sparklinePath = getSmoothSvgPath(sparklineCoordinates);
 
-    return { topSubjects, totalSubjectMinutes, streak, sparklinePath };
+    return { topSubjects, streak, sparklinePath };
   }, [sessions]);
 
   // --- Theme Colors (imported from lib/theme.ts) ---
@@ -2023,40 +2020,40 @@ export default function App() {
                 </h3>
                 {homeInsights.topSubjects.length > 0 ? (
                   <div
-                    className='mt-4 flex flex-col justify-center gap-2.5'
-                    role='img'
-                    aria-label='Três matérias com maior tempo registrado'
+                    className={`mt-2 flex min-h-0 flex-1 flex-col border-t ${
+                      isDarkMode
+                        ? 'divide-y divide-neutral-800 border-neutral-800'
+                        : 'divide-y divide-slate-200 border-slate-200'
+                    }`}
+                    role='list'
+                    aria-label='Cinco matérias com maior tempo registrado'
                   >
-                    {homeInsights.topSubjects.map((subject) => {
-                      return (
-                        <div key={subject.name} className='min-w-0'>
-                          <div className={`mb-1 flex items-center justify-between gap-2 text-[9px] sm:text-xs font-bold ${THEME.textMuted}`}>
-                            <span
-                              className='truncate text-[10px] sm:text-[13px]'
-                              title={subject.name}
-                            >
-                              {subject.name}
-                            </span>
-                            <span className='shrink-0'>
-                              {formatDurationDetailed(subject.minutes)}
-                            </span>
-                          </div>
-                          <div className='h-1.5 rounded-full bg-neutral-800 overflow-hidden'>
-                            <div
-                              className='h-full rounded-full bg-gradient-to-r from-[#FDE047E6] to-[#EAB308E6]'
-                              style={{
-                                width: `${Math.max(
-                                  (subject.minutes /
-                                    Math.max(homeInsights.totalSubjectMinutes, 1)) *
-                                    100,
-                                  4
-                                )}%`,
-                              }}
+                    {homeInsights.topSubjects.map((subject) => (
+                      <div
+                        key={subject.name}
+                        className={`flex min-h-0 flex-1 items-center justify-between gap-2 text-[9px] sm:text-xs font-bold ${THEME.textMuted}`}
+                        role='listitem'
+                      >
+                        <div className='flex min-w-0 items-center gap-1'>
+                          <span className='relative -top-px flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6] sm:h-5 sm:w-5'>
+                            <SubjectIcon
+                              subject={subject.name}
+                              className='h-[7px] w-[7px] sm:h-2.5 sm:w-2.5'
+                              color='#0a0a0a'
                             />
-                          </div>
+                          </span>
+                          <span
+                            className='truncate text-[9px] sm:text-[13px]'
+                            title={subject.name}
+                          >
+                            {subject.name}
+                          </span>
                         </div>
-                      );
-                    })}
+                        <span className='shrink-0'>
+                          {formatDurationDetailed(subject.minutes)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className='flex-1 flex flex-col items-center justify-center text-center px-2'>
@@ -2160,13 +2157,34 @@ export default function App() {
                     <label className={`block text-xs font-bold ${THEME.textMuted} uppercase mb-2`}>
                       Data
                     </label>
-                    <input
-                      type='datetime-local'
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
-                      required
-                    />
+                    <div
+                      className={`relative w-full min-w-0 rounded-xl border focus-within:border-[#EAB308E6] ${THEME.input}`}
+                    >
+                      <div
+                        aria-hidden='true'
+                        className='pointer-events-none flex items-center gap-1 p-4 text-[15px] font-medium'
+                      >
+                        <span>
+                          {selectedDate
+                            ? selectedDate
+                                .slice(0, 10)
+                                .split('-')
+                                .reverse()
+                                .join('/')
+                            : ''}
+                        </span>
+                        <ChevronDown className='h-4 w-4 shrink-0' />
+                      </div>
+                      <input
+                        type='datetime-local'
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        onClick={(e) => e.currentTarget.showPicker?.()}
+                        className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
+                        aria-label='Data e horário'
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className='min-w-0'>
@@ -2178,7 +2196,7 @@ export default function App() {
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       placeholder='45'
-                      className={`w-full min-w-0 rounded-xl border p-4 outline-none font-medium focus:border-[#EAB308E6] ${THEME.input}`}
+                      className={`w-full min-w-0 rounded-xl border p-4 outline-none text-[15px] font-medium focus:border-[#EAB308E6] ${THEME.input}`}
                       required
                     />
                   </div>
@@ -2702,15 +2720,15 @@ export default function App() {
                       }`}
                     >
                       <div className='flex items-center gap-2'>
-                        <span className='relative -top-0.5 flex h-[30.6px] w-[30.6px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
+                        <span className='relative -top-0.5 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
                           <SubjectIcon
                             subject={session.subject}
-                            className='h-[15.3px] w-[15.3px]'
+                            className='h-[15px] w-[15px]'
                             color='#0a0a0a'
                           />
                         </span>
                         <div>
-                          <h4 className={`font-bold ${THEME.text} text-sm`}>
+                          <h4 className={`font-semibold ${THEME.text} text-sm`}>
                             {session.subject}
                           </h4>
                           <p
@@ -2887,21 +2905,21 @@ export default function App() {
                     ) : (
                       <div className='flex items-center justify-between'>
                         <div className='flex flex-1 min-w-0 items-center gap-2 pr-4'>
-                          <span className='relative -top-0.5 flex h-[30.6px] w-[30.6px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
+                          <span className='relative -top-0.5 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#FACC15E6]'>
                             <SubjectIcon
                               subject={session.subject}
-                              className='h-[15.3px] w-[15.3px]'
+                              className='h-[15px] w-[15px]'
                               color='#0a0a0a'
                             />
                           </span>
                           <div className='min-w-0'>
                             <h3
-                              className={`font-bold text-[12.5px] break-words leading-tight ${THEME.text}`}
+                              className={`font-semibold text-[14px] break-words leading-tight ${THEME.text}`}
                             >
                               {session.subject}
                             </h3>
                             <p
-                              className={`text-[10.5px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
+                              className={`text-[11px] ${THEME.textMuted} flex items-center gap-1 mt-1 font-medium`}
                             >
                               <History className='h-3 w-3' />{' '}
                               {new Date(session.date).toLocaleDateString(
@@ -2920,7 +2938,7 @@ export default function App() {
                         </div>
                         <div className='flex items-center gap-2'>
                           <span
-                            className={`px-2 py-1 rounded text-[10.5px] font-bold whitespace-nowrap ${
+                            className={`px-2 py-1 rounded text-[12px] font-bold whitespace-nowrap ${
                               isDarkMode
                                 ? 'bg-neutral-800 text-neutral-300'
                                 : 'bg-white border text-slate-600'
