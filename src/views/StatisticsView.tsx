@@ -35,7 +35,7 @@ import {
   ArrowUpWideNarrow,
   LineChart as LineChartIcon,
   PieChart as PieChartIcon,
-  BarChart3,
+  ChartBar,
   Hexagon,
   TrendingUp,
   AlignLeft,
@@ -626,7 +626,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({
                   : `${THEME.textMuted}`
               }`}
             >
-              <BarChart3 className='h-3.5 w-3.5' />
+              <ChartBar className='h-3.5 w-3.5' />
             </button>
           </div>
         </div>
