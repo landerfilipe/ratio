@@ -10,10 +10,10 @@ export const FIXED_SUBJECTS = [
    'História',
    'IA | Engenharia',
    'Inglês',
-   'Linguagem',
    'Literatura',
    'Lógica',
    'Matemática',
+   'Português',
    'Provas e Carreira',
    'Psicologia',
 ].sort();
