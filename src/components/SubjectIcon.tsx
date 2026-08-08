@@ -1,10 +1,9 @@
 import {
+  Book,
   BookOpen,
   Brain,
-  CaseUpper,
   ChessQueen,
   Euro,
-  Feather,
   FlaskConical,
   GraduationCap,
   Hourglass,
@@ -46,10 +45,9 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Inglês: Languages,
   'Engenharia (IA)': Astroid,
   'Inteligência Artificial': Astroid,
-  Literatura: Feather,
+  Letras: Book,
   Lógica: Puzzle,
   Matemática: Radical,
-  Português: CaseUpper,
   'Provas e Carreira': GraduationCap,
   Psicologia: Brain,
 };
