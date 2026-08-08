@@ -1,5 +1,5 @@
 import {
-  Book,
+  BookA,
   BookOpen,
   Brain,
   ChessQueen,
@@ -45,7 +45,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Inglês: Languages,
   'Engenharia (IA)': Astroid,
   'Inteligência Artificial': Astroid,
-  Letras: Book,
+  Letras: BookA,
   Lógica: Puzzle,
   Matemática: Radical,
   'Provas e Carreira': GraduationCap,
