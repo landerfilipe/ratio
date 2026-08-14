@@ -2,6 +2,7 @@
 export const FIXED_SUBJECTS = [
    'Bíblia',
    'Ciências',
+   'Direito',
    'Economia',
    'Estudos Sociais',
    'Epistemologia',

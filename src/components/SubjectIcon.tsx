@@ -10,6 +10,7 @@ import {
   PenTool,
   Quote,
   Radical,
+  Scale,
   type LucideIcon,
 } from 'lucide-react';
 import { ICON_SOLID_COLOR } from '../lib/theme';
@@ -38,6 +39,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   'Provas e Carreira': GraduationCap,
   Psicologia: Brain,
   Tecnologia: Cpu,
+  Direito: Scale,
 };
 
 interface SubjectIconProps {
