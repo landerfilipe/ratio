@@ -3,15 +3,13 @@ export const FIXED_SUBJECTS = [
    'Bíblia',
    'Ciências',
    'Economia',
+   'Estudos Sociais',
    'Epistemologia',
-   'Estatística',
    'Estratégia',
    'Filosofia',
-   'História',
-   'IA | Engenharia',
-   'Inglês',
    'Linguagem',
    'Matemática',
    'Provas e Carreira',
    'Psicologia',
+   'Tecnologia'
 ].sort();
