@@ -9,7 +9,6 @@ import {
   Microscope,
   PenTool,
   Quote,
-  Radical,
   Scale,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,9 +22,14 @@ const latinCrossIcon = new URL(
   '../assets/subject-icons/cruz-latina.svg',
   import.meta.url
 ).href;
+const squareRootIcon = new URL(
+  '../assets/subject-icons/square-root.svg',
+  import.meta.url
+).href;
 const CUSTOM_SUBJECT_ICONS: Record<string, string> = {
   Bíblia: latinCrossIcon,
   'Estudos Sociais': atlasIcon,
+  Matemática: squareRootIcon,
 };
 
 const SUBJECT_ICONS: Record<string, LucideIcon> = {
@@ -35,7 +39,6 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Estratégia: ChessQueen,
   Filosofia: Quote,
   Linguagem: PenTool,
-  Matemática: Radical,
   'Provas e Carreira': GraduationCap,
   Psicologia: Brain,
   Tecnologia: Cpu,
