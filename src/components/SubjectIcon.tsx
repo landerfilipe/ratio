@@ -35,13 +35,13 @@ const CUSTOM_SUBJECT_ICONS: Record<string, string> = {
 const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Ciências: FlaskConical,
   Economia: Euro,
+  Engenharia: Cpu,
   Epistemologia: Microscope,
   Estratégia: ChessQueen,
   Filosofia: Quote,
   Linguagem: PenTool,
   'Provas e Carreira': GraduationCap,
   Psicologia: Brain,
-  Tecnologia: Cpu,
   Direito: Scale,
 };
 
