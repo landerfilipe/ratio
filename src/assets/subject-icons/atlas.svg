@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M12 18C16.9706 18 21 13.9706 21 9C21 7.15984 20.4477 5.44866 19.4999 4.02317M12 18C8.87958 18 6.13007 16.412 4.51555 14M12 18V21M7 21H17M21 3L19.5 4M4.5 14L3 15M17 9C17 11.7614 14.7614 14 12 14C9.23858 14 7 11.7614 7 9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
+<svg fill="#000000" width="800px" height="800px" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" id="globe" transform="matrix(-1, 0, 0, 1, 0, 0)">
+<g id="SVGRepo_bgCarrier" stroke-width="0"/>
+<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#000000" stroke-width="0.3"> <path d="M11.981,9.481,11.26,8.76A4.979,4.979,0,1,1,4.24,1.74l-.721-.721A5.991,5.991,0,0,0,7,11.475V13H6.5a.5.5,0,0,0,0,1h2a.5.5,0,0,0,0-1H8V11.473A5.983,5.983,0,0,0,11.981,9.481ZM7.5,9A3.5,3.5,0,1,0,4,5.5,3.5,3.5,0,0,0,7.5,9Zm1-5,.364-.592a2.5,2.5,0,0,1,.823.9L9.5,5h-1ZM6.656,3.156,7.5,4V5L8,6H9.94a2.494,2.494,0,0,1-1.5,1.814L8,7H6.5L5.05,5A2.5,2.5,0,0,1,6.656,3.156Z"/> </g>
+<g id="SVGRepo_iconCarrier"> <path d="M11.981,9.481,11.26,8.76A4.979,4.979,0,1,1,4.24,1.74l-.721-.721A5.991,5.991,0,0,0,7,11.475V13H6.5a.5.5,0,0,0,0,1h2a.5.5,0,0,0,0-1H8V11.473A5.983,5.983,0,0,0,11.981,9.481ZM7.5,9A3.5,3.5,0,1,0,4,5.5,3.5,3.5,0,0,0,7.5,9Zm1-5,.364-.592a2.5,2.5,0,0,1,.823.9L9.5,5h-1ZM6.656,3.156,7.5,4V5L8,6H9.94a2.494,2.494,0,0,1-1.5,1.814L8,7H6.5L5.05,5A2.5,2.5,0,0,1,6.656,3.156Z"/> </g>
+</svg>
