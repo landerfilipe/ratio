@@ -10,7 +10,7 @@ export const FIXED_SUBJECTS = [
    'História',
    'IA | Engenharia',
    'Inglês',
-   'Letras',
+   'Linguagem',
    'Lógica',
    'Matemática',
    'Provas e Carreira',

@@ -1,5 +1,4 @@
 import {
-  Book,
   BookOpen,
   Brain,
   ChessQueen,
@@ -9,6 +8,7 @@ import {
   Hourglass,
   Languages,
   Microscope,
+  PenTool,
   Puzzle,
   Quote,
   Radical,
@@ -20,6 +20,10 @@ import { ICON_SOLID_COLOR } from '../lib/theme';
 
 const anthropicIcon = new URL(
   '../assets/subject-icons/anthropic.svg',
+  import.meta.url
+).href;
+const latinCrossIcon = new URL(
+  '../assets/subject-icons/cruz-latina.svg',
   import.meta.url
 ).href;
 
@@ -45,7 +49,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Inglês: Languages,
   'Engenharia (IA)': Astroid,
   'Inteligência Artificial': Astroid,
-  Letras: Book,
+  Linguagem: PenTool,
   Lógica: Puzzle,
   Matemática: Radical,
   'Provas e Carreira': GraduationCap,
@@ -63,18 +67,20 @@ export const SubjectIcon = ({
   className = 'h-4 w-4',
   color = ICON_SOLID_COLOR,
 }: SubjectIconProps) => {
-  if (subject === 'IA | Engenharia') {
+  if (subject === 'IA | Engenharia' || subject === 'Bíblia') {
+    const customIcon = subject === 'Bíblia' ? latinCrossIcon : anthropicIcon;
+
     return (
       <span
         aria-hidden='true'
         className={`${className} inline-block`}
         style={{
           backgroundColor: color,
-          WebkitMaskImage: `url("${anthropicIcon}")`,
+          WebkitMaskImage: `url("${customIcon}")`,
           WebkitMaskPosition: 'center',
           WebkitMaskRepeat: 'no-repeat',
           WebkitMaskSize: 'contain',
-          maskImage: `url("${anthropicIcon}")`,
+          maskImage: `url("${customIcon}")`,
           maskPosition: 'center',
           maskRepeat: 'no-repeat',
           maskSize: 'contain',
