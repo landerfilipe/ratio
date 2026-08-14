@@ -2,6 +2,7 @@ import {
   BookOpen,
   Brain,
   ChessQueen,
+  Cpu,
   Euro,
   FlaskConical,
   GraduationCap,
@@ -21,15 +22,9 @@ const latinCrossIcon = new URL(
   '../assets/subject-icons/cruz-latina.svg',
   import.meta.url
 ).href;
-const openAIIcon = new URL(
-  '../assets/subject-icons/openAI.svg',
-  import.meta.url
-).href;
-
 const CUSTOM_SUBJECT_ICONS: Record<string, string> = {
   Bíblia: latinCrossIcon,
   'Estudos Sociais': atlasIcon,
-  Tecnologia: openAIIcon,
 };
 
 const SUBJECT_ICONS: Record<string, LucideIcon> = {
@@ -42,6 +37,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   Matemática: Radical,
   'Provas e Carreira': GraduationCap,
   Psicologia: Brain,
+  Tecnologia: Cpu,
 };
 
 interface SubjectIconProps {
