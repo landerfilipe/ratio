@@ -4,6 +4,7 @@ export const FIXED_SUBJECTS = [
    'Ciências',
    'Direito',
    'Economia',
+   'Engenharia',
    'Estudos Sociais',
    'Epistemologia',
    'Estratégia',
@@ -11,6 +12,5 @@ export const FIXED_SUBJECTS = [
    'Linguagem',
    'Matemática',
    'Provas e Carreira',
-   'Psicologia',
-   'Tecnologia'
+   'Psicologia'
 ].sort();
