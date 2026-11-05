@@ -5,6 +5,7 @@ export const FIXED_SUBJECTS = [
    'Direito',
    'Economia',
    'Engenharia',
+   'Estatística',
    'Estudos Sociais',
    'Epistemologia',
    'Estratégia',
