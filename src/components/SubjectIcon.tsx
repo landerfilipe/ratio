@@ -2,6 +2,7 @@ import {
   BookOpen,
   Brain,
   ChessQueen,
+  ChartLine,
   Cpu,
   Euro,
   FlaskConical,
@@ -45,6 +46,7 @@ const SUBJECT_ICONS: Record<string, LucideIcon> = {
   'Provas e Carreira': GraduationCap,
   Psicologia: Brain,
   Direito: Scale,
+  Estatística: ChartLine,
 };
 
 interface SubjectIconProps {
