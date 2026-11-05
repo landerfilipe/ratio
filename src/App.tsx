@@ -38,7 +38,7 @@ import {
   Search,
   AlertCircle,
   Home,
-  Activity,
+  ChartLine,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -3241,7 +3241,7 @@ export default function App() {
                 : THEME.textMuted
             }`}
           >
-            <Activity
+            <ChartLine
               className='h-5 w-5'
               style={view === 'statistics' ? ICON_SOLID_STYLE : {}}
             />
